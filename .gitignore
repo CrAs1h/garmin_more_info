@@ -1,0 +1,14 @@
+# Garmin Developer Key (Private)
+developer_key.der
+
+# Compiled binaries
+bin/
+*.prg
+
+# VS Code settings / local settings
+.vscode/
+*.ipr
+*.iws
+.idea/
+.DS_Store
+.codex-tmp/

@@ -1,0 +1,6 @@
+<strings>
+    <string id="AppName">Garmin More Info</string>
+    <string id="DeviceIdTitle">Device ID (send to seller)</string>
+    <string id="LicenseTitle">Activation Code</string>
+    <string id="LicensePrompt">Enter activation code</string>
+</strings>

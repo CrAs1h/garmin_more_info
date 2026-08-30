@@ -1,0 +1,11 @@
+<settings>
+    <!-- 设备ID（只读展示，用户需要将此ID发送给卖家） -->
+    <setting propertyKey="@Properties.deviceId" title="@Strings.DeviceIdTitle">
+        <settingConfig type="alphaNumeric" readonly="true" />
+    </setting>
+
+    <!-- 激活码输入 -->
+    <setting propertyKey="@Properties.licenseKey" title="@Strings.LicenseTitle" prompt="@Strings.LicensePrompt">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+</settings>
