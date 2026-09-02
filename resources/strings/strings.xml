@@ -3,4 +3,14 @@
     <string id="DeviceIdTitle">Device ID (send to seller)</string>
     <string id="LicenseTitle">Activation Code</string>
     <string id="LicensePrompt">Enter activation code</string>
+    <string id="DataSlot1Title">Top left data</string>
+    <string id="DataSlot2Title">Top right data</string>
+    <string id="DataSlot3Title">Bottom left data</string>
+    <string id="DataSlot4Title">Bottom right data</string>
+    <string id="DataSteps">Steps</string>
+    <string id="DataHeartRate">Heart rate</string>
+    <string id="DataBodyBattery">Body Battery</string>
+    <string id="DataWatchBattery">Watch battery</string>
+    <string id="DataCalories">Calories</string>
+    <string id="DataDistance">Distance</string>
 </strings>
