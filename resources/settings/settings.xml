@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <settings>
     <!-- 设备ID（只读展示，用户需要将此ID发送给卖家） -->
     <setting propertyKey="@Properties.deviceId" title="@Strings.DeviceIdTitle">
@@ -9,11 +10,12 @@
         <settingConfig type="alphaNumeric" />
     </setting>
 
-    <!-- 表盘数据项名称语言（1 英语，2 中文） -->
+    <!-- 表盘数据项名称样式（1 简易英文，2 中文名称，3 小图标符号） -->
     <setting propertyKey="@Properties.labelLanguage" title="@Strings.DataLabelLanguageTitle">
         <settingConfig type="list">
             <listEntry value="1">@Strings.LanguageEnglish</listEntry>
             <listEntry value="2">@Strings.LanguageChinese</listEntry>
+            <listEntry value="3">@Strings.StyleIcons</listEntry>
         </settingConfig>
     </setting>
 
