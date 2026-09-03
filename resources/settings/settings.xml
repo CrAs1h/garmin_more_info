@@ -9,6 +9,14 @@
         <settingConfig type="alphaNumeric" />
     </setting>
 
+    <!-- 表盘数据项名称语言（1 英语，2 中文） -->
+    <setting propertyKey="@Properties.labelLanguage" title="@Strings.DataLabelLanguageTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.LanguageEnglish</listEntry>
+            <listEntry value="2">@Strings.LanguageChinese</listEntry>
+        </settingConfig>
+    </setting>
+
     <setting propertyKey="@Properties.dataSlot1" title="@Strings.DataSlot1Title"><settingConfig type="list">
         <listEntry value="0">@Strings.DataSteps</listEntry><listEntry value="1">@Strings.DataHeartRate</listEntry>
         <listEntry value="2">@Strings.DataBodyBattery</listEntry><listEntry value="3">@Strings.DataWatchBattery</listEntry>

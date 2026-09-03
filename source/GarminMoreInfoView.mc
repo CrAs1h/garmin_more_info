@@ -17,6 +17,9 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     private const DATA_CALORIES = 4;
     private const DATA_DISTANCE = 5;
 
+    private const LANG_ENGLISH = 1;
+    private const LANG_CHINESE = 2;
+
     private const COLOR_BACKGROUND = 0x000000;
     private const COLOR_PRIMARY = 0xF6F2EA;
     private const COLOR_ACCENT = 0xC6FF00;
@@ -107,24 +110,30 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     }
 
     private function drawDataSlots(dc as Dc, cx, h, edge, scale) as Void {
-        // Garmin's built-in fonts do not scale linearly with screen resolution.
-        // Keep both rows inside the circular safe zone instead of scaling a fixed
-        // 240 px spacing value (which pushed row two off 390 px devices).
+        // The usable bottom edge of a round display is higher at the two column
+        // centers than it is on the vertical center line. Reserve a conservative
+        // circular safe area and split it evenly between both rows.
         var dx = (edge * 0.22).toNumber();
-        var topY = (h * 0.49).toNumber();
-        var bottomY = (h * 0.69).toNumber();
+        var dataTop = (h * 0.48).toNumber();
+        var dataBottom = (h * 0.84).toNumber();
+        var rowHeight = (dataBottom - dataTop) / 2;
+        var topY = dataTop;
+        var bottomY = dataTop + rowHeight;
         var slotWidth = (edge * 0.35).toNumber();
-        drawDataSlot(dc, cx - dx, topY, getSetting("dataSlot1", DATA_STEPS), scale, slotWidth);
-        drawDataSlot(dc, cx + dx, topY, getSetting("dataSlot2", DATA_HEART_RATE), scale, slotWidth);
-        drawDataSlot(dc, cx - dx, bottomY, getSetting("dataSlot3", DATA_BODY_BATTERY), scale, slotWidth);
-        drawDataSlot(dc, cx + dx, bottomY, getSetting("dataSlot4", DATA_WATCH_BATTERY), scale, slotWidth);
+        var lang = getSetting("labelLanguage", LANG_ENGLISH);
+        drawDataSlot(dc, cx - dx, topY, getSetting("dataSlot1", DATA_STEPS), scale, slotWidth, rowHeight, lang);
+        drawDataSlot(dc, cx + dx, topY, getSetting("dataSlot2", DATA_HEART_RATE), scale, slotWidth, rowHeight, lang);
+        drawDataSlot(dc, cx - dx, bottomY, getSetting("dataSlot3", DATA_BODY_BATTERY), scale, slotWidth, rowHeight, lang);
+        drawDataSlot(dc, cx + dx, bottomY, getSetting("dataSlot4", DATA_WATCH_BATTERY), scale, slotWidth, rowHeight, lang);
     }
 
-    private function drawDataSlot(dc as Dc, x, y, dataType, scale, slotWidth) as Void {
-        var metric = readMetric(dataType) as Lang.Array;
+    private function drawDataSlot(dc as Dc, x, y, dataType, scale, slotWidth, rowHeight, lang) as Void {
+        var metric = readMetric(dataType, lang) as Lang.Array;
         var value = metric[0];
         var label = metric[1];
-        var valueFont = fitMetricFont(dc, value, slotWidth);
+        var labelHeight = dc.getFontHeight(Graphics.FONT_TINY);
+        var valueHeight = rowHeight - labelHeight - px(2, scale);
+        var valueFont = fitMetricFont(dc, value, slotWidth, valueHeight);
         drawText(dc, x, y, valueFont, value, COLOR_ACCENT,
                  Graphics.TEXT_JUSTIFY_CENTER);
 
@@ -139,16 +148,29 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
                  Graphics.TEXT_JUSTIFY_CENTER);
     }
 
-    private function fitMetricFont(dc as Dc, value, slotWidth) {
-        // NUMBER_MEDIUM is preferred when it fits. Long values fall back to
-        // NUMBER_MILD so adjacent slots can never collide horizontally.
-        if (dc.getTextWidthInPixels(value, Graphics.FONT_NUMBER_MEDIUM) <= slotWidth) {
+    private function fitMetricFont(dc as Dc, value, slotWidth, maxHeight) {
+        // Garmin font tables vary between MIP and AMOLED devices. A font must
+        // satisfy both axes; width-only fitting can still clip the lower row.
+        if (dc.getTextWidthInPixels(value, Graphics.FONT_NUMBER_MEDIUM) <= slotWidth &&
+            dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM) <= maxHeight) {
             return Graphics.FONT_NUMBER_MEDIUM;
         }
-        return Graphics.FONT_NUMBER_MILD;
+        if (dc.getTextWidthInPixels(value, Graphics.FONT_NUMBER_MILD) <= slotWidth &&
+            dc.getFontHeight(Graphics.FONT_NUMBER_MILD) <= maxHeight) {
+            return Graphics.FONT_NUMBER_MILD;
+        }
+        if (dc.getTextWidthInPixels(value, Graphics.FONT_LARGE) <= slotWidth &&
+            dc.getFontHeight(Graphics.FONT_LARGE) <= maxHeight) {
+            return Graphics.FONT_LARGE;
+        }
+        if (dc.getTextWidthInPixels(value, Graphics.FONT_MEDIUM) <= slotWidth &&
+            dc.getFontHeight(Graphics.FONT_MEDIUM) <= maxHeight) {
+            return Graphics.FONT_MEDIUM;
+        }
+        return Graphics.FONT_SMALL;
     }
 
-    private function readMetric(dataType) {
+    private function readMetric(dataType, lang) {
         var activity = null;
         try { activity = ActivityMonitor.getInfo(); } catch (ex) {}
 
@@ -158,7 +180,8 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
                 var active = Activity.getActivityInfo();
                 if (active != null && active.currentHeartRate != null) { hr = active.currentHeartRate; }
             } catch (ex) {}
-            return [hr > 0 ? hr.format("%d") : "--", "BPM"];
+            var label = (lang == LANG_CHINESE) ? "心率" : "BPM";
+            return [hr > 0 ? hr.format("%d") : "--", label];
         }
 
         if (dataType == DATA_BODY_BATTERY) {
@@ -168,17 +191,20 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
                     body = activity.bodyBattery;
                 }
             } catch (ex) {}
-            return [body == null ? "--" : body.format("%d"), "BODY"];
+            var label = (lang == LANG_CHINESE) ? "身电" : "BODY";
+            return [body == null ? "--" : body.format("%d"), label];
         }
 
         if (dataType == DATA_WATCH_BATTERY) {
-            return [System.getSystemStats().battery.format("%d") + "%", "BAT"];
+            var label = (lang == LANG_CHINESE) ? "电量" : "BAT";
+            return [System.getSystemStats().battery.format("%d") + "%", label];
         }
 
         if (dataType == DATA_CALORIES) {
             var calories = 0;
             if (activity != null && activity.calories != null) { calories = activity.calories; }
-            return [compactNumber(calories), "KCAL"];
+            var label = (lang == LANG_CHINESE) ? "卡路里" : "KCAL";
+            return [compactNumber(calories), label];
         }
 
         if (dataType == DATA_DISTANCE) {
@@ -186,12 +212,14 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             if (activity != null && activity.distance != null) {
                 distance = activity.distance.toDouble() / 100000.0;
             }
-            return [distance.format("%.1f"), "KM"];
+            var label = (lang == LANG_CHINESE) ? "距离" : "KM";
+            return [distance.format("%.1f"), label];
         }
 
         var steps = 0;
         if (activity != null && activity.steps != null) { steps = activity.steps; }
-        return [compactNumber(steps), "STEPS"];
+        var label = (lang == LANG_CHINESE) ? "步数" : "STEPS";
+        return [compactNumber(steps), label];
     }
 
     private function getSetting(key, fallback) {

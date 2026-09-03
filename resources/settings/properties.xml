@@ -1,6 +1,7 @@
 <properties>
     <property id="deviceId" type="string"></property>
     <property id="licenseKey" type="string"></property>
+    <property id="labelLanguage" type="number">1</property>
     <property id="dataSlot1" type="number">0</property>
     <property id="dataSlot2" type="number">1</property>
     <property id="dataSlot3" type="number">2</property>

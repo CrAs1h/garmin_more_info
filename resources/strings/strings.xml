@@ -1,16 +1,20 @@
 <strings>
     <string id="AppName">Garmin More Info</string>
-    <string id="DeviceIdTitle">Device ID (send to seller)</string>
-    <string id="LicenseTitle">Activation Code</string>
-    <string id="LicensePrompt">Enter activation code</string>
-    <string id="DataSlot1Title">Top left data</string>
-    <string id="DataSlot2Title">Top right data</string>
-    <string id="DataSlot3Title">Bottom left data</string>
-    <string id="DataSlot4Title">Bottom right data</string>
-    <string id="DataSteps">Steps</string>
-    <string id="DataHeartRate">Heart rate</string>
-    <string id="DataBodyBattery">Body Battery</string>
-    <string id="DataWatchBattery">Watch battery</string>
-    <string id="DataCalories">Calories</string>
-    <string id="DataDistance">Distance</string>
+    <string id="DeviceIdTitle">设备ID（发给客服激活）</string>
+    <string id="LicenseTitle">激活码</string>
+    <string id="LicensePrompt">请输入激活码</string>
+    <string id="DataLabelLanguageTitle">表盘数据项名称</string>
+    <string id="LanguageEnglish">1 英语</string>
+    <string id="LanguageChinese">2 中文</string>
+    <string id="DataSlot1Title">左上数据项</string>
+    <string id="DataSlot2Title">右上数据项</string>
+    <string id="DataSlot3Title">左下数据项</string>
+    <string id="DataSlot4Title">右下数据项</string>
+    <string id="DataSteps">步数</string>
+    <string id="DataHeartRate">心率</string>
+    <string id="DataBodyBattery">身体电量</string>
+    <string id="DataWatchBattery">手表电量</string>
+    <string id="DataCalories">卡路里</string>
+    <string id="DataDistance">距离</string>
 </strings>
+
