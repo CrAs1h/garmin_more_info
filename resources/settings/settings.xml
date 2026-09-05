@@ -48,6 +48,8 @@
         <settingConfig type="list">
             <listEntry value="0">@Strings.BatteryBarSegmented</listEntry>
             <listEntry value="1">@Strings.BatteryBarSolid</listEntry>
+            <listEntry value="2">@Strings.BatteryBarMoreSegments</listEntry>
+            <listEntry value="3">@Strings.BatteryBarDots</listEntry>
         </settingConfig>
     </setting>
 

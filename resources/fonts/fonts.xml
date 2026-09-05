@@ -1,3 +1,4 @@
 <fonts>
     <font id="CustomLabelFont" filename="custom_label.fnt" />
+    <font id="CustomDateFont" filename="custom_date.fnt" />
 </fonts>

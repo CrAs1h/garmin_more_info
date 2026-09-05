@@ -14,6 +14,8 @@
     <string id="BatteryBarStyleTitle">电量条样式</string>
     <string id="BatteryBarSegmented">分段展示</string>
     <string id="BatteryBarSolid">长实线</string>
+    <string id="BatteryBarMoreSegments">更多分段</string>
+    <string id="BatteryBarDots">圆点</string>
     <string id="ThemeLime">经典荧光绿（默认）</string>
     <string id="ThemeBlue">冰川蓝</string>
     <string id="ThemeOrange">日落橙</string>

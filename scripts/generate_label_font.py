@@ -88,16 +88,11 @@ def draw_sensor_icon(kind, size=20):
     return img
 
 
-def generate_font(output_dir):
+def build_bmfont(output_dir, font_id, font_face, font_size, line_height, base_line, chars_to_add, icons=None):
     os.makedirs(output_dir, exist_ok=True)
-    fnt_path = os.path.join(output_dir, "custom_label.fnt")
-    png_path = os.path.join(output_dir, "custom_label_0.png")
+    fnt_path = os.path.join(output_dir, f"{font_id}.fnt")
+    png_path = os.path.join(output_dir, f"{font_id}_0.png")
 
-    font_size = 22
-    line_height = 24
-    base_line = 21
-
-    # 加载系统微软雅黑或黑体
     font_files = ['C:/Windows/Fonts/msyhbd.ttc', 'C:/Windows/Fonts/msyh.ttc', 'C:/Windows/Fonts/simhei.ttf']
     font = None
     for f in font_files:
@@ -108,36 +103,14 @@ def generate_font(output_dir):
             except Exception:
                 pass
 
-    chars_to_add = "压力血氧海拔气温度心率身电量卡路里距离步数周一二三四五六日星期 0123456789"
-    
-    icons = {
-        'A': draw_steps_icon(20),
-        'B': draw_heart_icon(20),
-        'C': draw_lightning_icon(20),
-        'D': draw_battery_icon(20),
-        'E': draw_flame_icon(20),
-        'F': draw_pin_icon(20),
-        'G': draw_sensor_icon('stress'),
-        'H': draw_sensor_icon('oxygen'),
-        'I': draw_sensor_icon('elevation'),
-        'J': draw_sensor_icon('pressure'),
-        'K': draw_sensor_icon('temperature'),
-
-    }
-
-    # 计算各字符图像
     char_images = {}
     for ch in chars_to_add:
-        bbox = font.getbbox(ch)  # (left, top, right, bottom)
+        bbox = font.getbbox(ch)
         w = max(1, bbox[2] - bbox[0])
         h = max(1, bbox[3] - bbox[1])
-        
-        # 留白边距
         glyph_img = Image.new("RGBA", (w + 2, h + 2), (0, 0, 0, 0))
         d = ImageDraw.Draw(glyph_img)
         d.text((1 - bbox[0], 1 - bbox[1]), ch, font=font, fill=(255, 255, 255, 255))
-        
-        # 裁剪紧致边界
         bbox_actual = glyph_img.getbbox()
         if bbox_actual:
             glyph_cropped = glyph_img.crop(bbox_actual)
@@ -147,7 +120,6 @@ def generate_font(output_dir):
             glyph_cropped = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
             xoffset = 0
             yoffset = 0
-        
         adv = int(round(font.getlength(ch)))
         if adv <= 0:
             adv = font_size
@@ -158,25 +130,24 @@ def generate_font(output_dir):
             'xadvance': adv,
         }
 
-    for ch_key, icon_img in icons.items():
-        bbox_actual = icon_img.getbbox()
-        if bbox_actual:
-            glyph_cropped = icon_img.crop(bbox_actual)
-            xoffset = bbox_actual[0]
-            yoffset = bbox_actual[1]
-        else:
-            glyph_cropped = icon_img
-            xoffset = 0
-            yoffset = 0
-        
-        char_images[ord(ch_key)] = {
-            'img': glyph_cropped,
-            'xoffset': xoffset,
-            'yoffset': yoffset,
-            'xadvance': 20,
-        }
+    if icons:
+        for ch_key, icon_img in icons.items():
+            bbox_actual = icon_img.getbbox()
+            if bbox_actual:
+                glyph_cropped = icon_img.crop(bbox_actual)
+                xoffset = bbox_actual[0]
+                yoffset = bbox_actual[1]
+            else:
+                glyph_cropped = icon_img
+                xoffset = 0
+                yoffset = 0
+            char_images[ord(ch_key)] = {
+                'img': glyph_cropped,
+                'xoffset': xoffset,
+                'yoffset': yoffset,
+                'xadvance': icon_img.width,
+            }
 
-    # 排版到 Atlas (256x128)
     atlas_w = 256
     atlas_h = 128
     atlas = Image.new("RGBA", (atlas_w, atlas_h), (0, 0, 0, 0))
@@ -193,7 +164,6 @@ def generate_font(output_dir):
             cur_x = 2
             cur_y += row_h + 2
             row_h = 0
-        
         if cur_y + gh >= atlas_h:
             atlas_h *= 2
             new_atlas = Image.new("RGBA", (atlas_w, atlas_h), (0, 0, 0, 0))
@@ -216,20 +186,63 @@ def generate_font(output_dir):
         if gh > row_h:
             row_h = gh
 
-    # 保存图片
     atlas.save(png_path)
 
-    # 写入 .fnt
     with open(fnt_path, "w", encoding="utf-8") as f:
-        f.write(f'info face="CustomLabel" size={font_size} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=1,1\n')
+        f.write(f'info face="{font_face}" size={font_size} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=1,1\n')
         f.write(f'common lineHeight={line_height} base={base_line} scaleW={atlas_w} scaleH={atlas_h} pages=1 packed=0\n')
-        f.write('page id=0 file="custom_label_0.png"\n')
+        f.write(f'page id=0 file="{font_id}_0.png"\n')
         f.write(f'chars count={len(char_entries)}\n')
         for c in char_entries:
             f.write(f"char id={c['id']:<5} x={c['x']:<4} y={c['y']:<4} width={c['width']:<3} height={c['height']:<3} "
                     f"xoffset={c['xoffset']:<3} yoffset={c['yoffset']:<3} xadvance={c['xadvance']:<3} page=0 chnl=15\n")
 
     print(f"BMFont generated successfully: {fnt_path}, {png_path}, chars: {len(char_entries)}")
+
+
+def generate_font(output_dir):
+    # 1. 字段名称字体 custom_label: 16px + 16px 图标
+    icon_size = 16
+    raw_icons = {
+        'A': draw_steps_icon(20),
+        'B': draw_heart_icon(20),
+        'C': draw_lightning_icon(20),
+        'D': draw_battery_icon(20),
+        'E': draw_flame_icon(20),
+        'F': draw_pin_icon(20),
+        'G': draw_sensor_icon('stress'),
+        'H': draw_sensor_icon('oxygen'),
+        'I': draw_sensor_icon('elevation'),
+        'J': draw_sensor_icon('pressure'),
+        'K': draw_sensor_icon('temperature'),
+    }
+    icons = {
+        k: img.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
+        for k, img in raw_icons.items()
+    }
+    build_bmfont(
+        output_dir=output_dir,
+        font_id="custom_label",
+        font_face="CustomLabel",
+        font_size=16,
+        line_height=18,
+        base_line=15,
+        chars_to_add="压力血氧海拔气温度心率身电量卡路里距离步数 0123456789",
+        icons=icons
+    )
+
+    # 2. 中文日期字体 custom_date: 22px，与数值字体一样大
+    build_bmfont(
+        output_dir=output_dir,
+        font_id="custom_date",
+        font_face="CustomDate",
+        font_size=22,
+        line_height=24,
+        base_line=21,
+        chars_to_add="周一二三四五六日星期 0123456789",
+        icons=None
+    )
+
 
 if __name__ == "__main__":
     generate_font("resources/fonts")

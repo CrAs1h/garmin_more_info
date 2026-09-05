@@ -3,6 +3,7 @@ import Toybox.ActivityMonitor;
 import Toybox.Application;
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.Math;
 import Toybox.SensorHistory;
 import Toybox.System;
 import Toybox.Time;
@@ -27,6 +28,11 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     private const STYLE_CHINESE = 2;
     private const STYLE_ICONS = 3;
 
+    private const BATTERY_STYLE_SEGMENTED = 0;
+    private const BATTERY_STYLE_SOLID = 1;
+    private const BATTERY_STYLE_MORE_SEGMENTS = 2;
+    private const BATTERY_STYLE_DOTS = 3;
+
     private const COLOR_BACKGROUND = 0x000000;
     private const COLOR_PRIMARY = 0xF6F2EA;
     private var mAccentColor = 0xC6FF00;
@@ -37,6 +43,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
     private var mLowPower = false;
     private var mCustomLabelFont as WatchUi.FontResource? = null;
+    private var mCustomDateFont as WatchUi.FontResource? = null;
     private var mCollegeTime;
     private var mCollegeValue;
     private var mCollegeSmall;
@@ -50,6 +57,11 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             mCustomLabelFont = WatchUi.loadResource(Rez.Fonts.CustomLabelFont) as WatchUi.FontResource;
         } catch (ex) {
             mCustomLabelFont = null;
+        }
+        try {
+            mCustomDateFont = WatchUi.loadResource(Rez.Fonts.CustomDateFont) as WatchUi.FontResource;
+        } catch (ex) {
+            mCustomDateFont = null;
         }
     }
 
@@ -140,70 +152,138 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         var activeColor = mLowPower ? COLOR_MUTED : mAccentColor;
         var watchColor = mLowPower ? COLOR_MUTED : mWatchBatteryColor;
         var bodyColor = mLowPower ? COLOR_MUTED : mBodyBatteryColor;
+        var barStyle = getSetting("batteryBarStyle", BATTERY_STYLE_SEGMENTED);
 
-        dc.setPenWidth(penWidth);
+        if (barStyle == BATTERY_STYLE_DOTS) {
+            var dotRadius = px(3, scale);
+            if (dotRadius < 2) { dotRadius = 2; }
 
-        // 1. 左侧自定义数据轨：从 6点钟(264°) 顺时针延伸至 12点钟(96°)，总跨度 168°
-        // 暗灰底轨
-        dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, 96);
+            var watchBattery = getOrbitValue("leftArcData", DATA_WATCH_BATTERY);
+            if (watchBattery == null || watchBattery < 0) { watchBattery = 0; }
+            else if (watchBattery > 100) { watchBattery = 100; }
+            var watchDots = Math.round(watchBattery * 16.0 / 100.0).toNumber();
+            if (watchBattery > 0 && watchDots == 0) { watchDots = 1; }
 
-        // 左侧所选数据的 0–100 进度
-        var watchBattery = getOrbitValue("leftArcData", DATA_WATCH_BATTERY);
-        if (watchBattery != null && watchBattery > 0) {
-            if (watchBattery > 100) { watchBattery = 100; }
-            var watchSweep = (watchBattery * 168 / 100).toNumber();
-            if (watchSweep < 1) { watchSweep = 1; }
-            var watchEnd = 264 - watchSweep;
-            dc.setColor(watchColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, watchEnd);
-        }
+            var bodyBattery = getOrbitValue("rightArcData", DATA_BODY_BATTERY);
+            if (bodyBattery == null || bodyBattery < 0) { bodyBattery = 0; }
+            else if (bodyBattery > 100) { bodyBattery = 100; }
+            var bodyDots = Math.round(bodyBattery * 16.0 / 100.0).toNumber();
+            if (bodyBattery > 0 && bodyDots == 0) { bodyDots = 1; }
 
-        // 2. 右侧自定义数据轨：从 6点钟(276°) 逆时针延伸至 12点钟(84°)，总跨度 168°
-        // 暗灰底轨
-        dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 84);
-
-        // 右侧所选数据的 0–100 进度
-        var bodyBattery = getOrbitValue("rightArcData", DATA_BODY_BATTERY);
-        if (bodyBattery != null && bodyBattery > 0) {
-            if (bodyBattery > 100) { bodyBattery = 100; }
-            var bodySweep = (bodyBattery * 168 / 100).toNumber();
-            if (bodySweep < 1) { bodySweep = 1; }
-            var bodyEnd = 276 + bodySweep;
-            dc.setColor(bodyColor, Graphics.COLOR_TRANSPARENT);
-            if (bodyEnd <= 360) {
-                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, bodyEnd);
-            } else {
-                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 360);
-                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 0, bodyEnd - 360);
+            // 左侧圆点：顺时针从 6点钟(264°) 延伸至 12点钟(96°)
+            for (var i = 0; i < 16; i++) {
+                var angle;
+                if (i < 8) {
+                    angle = 264.0 - (i + 0.5) * 10.5;
+                } else {
+                    angle = 180.0 - ((i - 8) + 0.5) * 10.5;
+                }
+                var rad = Math.toRadians(angle);
+                var pxPos = (cx + radius * Math.cos(rad) + 0.5).toNumber();
+                var pyPos = (cy - radius * Math.sin(rad) + 0.5).toNumber();
+                dc.setColor(i < watchDots ? watchColor : COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
+                dc.fillCircle(pxPos, pyPos, dotRadius);
             }
-        }
 
-        // Eight segments place the middle gap directly at the 3/9 o'clock ticks.
-        // Mask after drawing progress so partial segments still show the exact
-        // battery level, and empty track segments have the same spacing.
-        dc.setPenWidth(penWidth + px(2, scale));
-        dc.setColor(COLOR_BACKGROUND, Graphics.COLOR_TRANSPARENT);
-        // Only the explicit solid value disables segmentation. Both styles
-        // retain clearance around the side ticks to avoid overlapping them.
-        var segmented = getSetting("batteryBarStyle", 0) != 1;
-        for (var segment = 1; segment < 8; segment++) {
-            if (!segmented && segment != 4) { continue; }
-            var offset = segment * 21;
-            // Extra clearance keeps the tick separate from both arc ends.
-            var halfGap = segment == 4 ? 4 : 2;
-            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE,
-                       264 - offset + halfGap, 264 - offset - halfGap);
-            if (segment == 4) {
-                // Split the right tick gap at the 360/0 degree boundary.
-                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
-                           360 - halfGap, 360);
-                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
-                           0, halfGap);
+            // 右侧圆点：逆时针从 6点钟(276°) 延伸至 12点钟(84°)
+            for (var i = 0; i < 16; i++) {
+                var angle;
+                if (i < 8) {
+                    angle = 276.0 + (i + 0.5) * 10.5;
+                } else {
+                    angle = ((i - 8) + 0.5) * 10.5;
+                }
+                var rad = Math.toRadians(angle);
+                var pxPos = (cx + radius * Math.cos(rad) + 0.5).toNumber();
+                var pyPos = (cy - radius * Math.sin(rad) + 0.5).toNumber();
+                dc.setColor(i < bodyDots ? bodyColor : COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
+                dc.fillCircle(pxPos, pyPos, dotRadius);
+            }
+        } else {
+            dc.setPenWidth(penWidth);
+
+            // 1. 左侧自定义数据轨：从 6点钟(264°) 顺时针延伸至 12点钟(96°)，总跨度 168°
+            // 暗灰底轨
+            dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
+            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, 96);
+
+            // 左侧所选数据的 0–100 进度
+            var watchBattery = getOrbitValue("leftArcData", DATA_WATCH_BATTERY);
+            if (watchBattery != null && watchBattery > 0) {
+                if (watchBattery > 100) { watchBattery = 100; }
+                var watchSweep = (watchBattery * 168 / 100).toNumber();
+                if (watchSweep < 1) { watchSweep = 1; }
+                var watchEnd = 264 - watchSweep;
+                dc.setColor(watchColor, Graphics.COLOR_TRANSPARENT);
+                dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, watchEnd);
+            }
+
+            // 2. 右侧自定义数据轨：从 6点钟(276°) 逆时针延伸至 12点钟(84°)，总跨度 168°
+            // 暗灰底轨
+            dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
+            dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 84);
+
+            // 右侧所选数据的 0–100 进度
+            var bodyBattery = getOrbitValue("rightArcData", DATA_BODY_BATTERY);
+            if (bodyBattery != null && bodyBattery > 0) {
+                if (bodyBattery > 100) { bodyBattery = 100; }
+                var bodySweep = (bodyBattery * 168 / 100).toNumber();
+                if (bodySweep < 1) { bodySweep = 1; }
+                var bodyEnd = 276 + bodySweep;
+                dc.setColor(bodyColor, Graphics.COLOR_TRANSPARENT);
+                if (bodyEnd <= 360) {
+                    dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, bodyEnd);
+                } else {
+                    dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 360);
+                    dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 0, bodyEnd - 360);
+                }
+            }
+
+            // 遮罩切口：根据所选分段样式切出间隙
+            dc.setPenWidth(penWidth + px(2, scale));
+            dc.setColor(COLOR_BACKGROUND, Graphics.COLOR_TRANSPARENT);
+
+            if (barStyle == BATTERY_STYLE_SOLID) {
+                // 长实线：仅在 3点/9点 刻度线位置留出 clearance
+                var halfGap = 4;
+                dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 180 + halfGap, 180 - halfGap);
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 360 - halfGap, 360);
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 0, halfGap);
+            } else if (barStyle == BATTERY_STYLE_MORE_SEGMENTS) {
+                // 更多分段：16 段细密分段
+                for (var segment = 1; segment < 16; segment++) {
+                    var offset = segment * 10.5;
+                    var halfGap = segment == 8 ? 4 : 1;
+                    dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE,
+                               (264.0 - offset + halfGap).toNumber(), (264.0 - offset - halfGap).toNumber());
+                    if (segment == 8) {
+                        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                                   360 - halfGap, 360);
+                        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                                   0, halfGap);
+                    } else {
+                        var rStart = ((276.0 + offset - halfGap).toNumber()) % 360;
+                        var rEnd = ((276.0 + offset + halfGap).toNumber()) % 360;
+                        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, rStart, rEnd);
+                    }
+                }
             } else {
-                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
-                           (276 + offset - halfGap) % 360, (276 + offset + halfGap) % 360);
+                // 默认：分段展示（8段）
+                for (var segment = 1; segment < 8; segment++) {
+                    var offset = segment * 21;
+                    var halfGap = segment == 4 ? 4 : 2;
+                    dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE,
+                               264 - offset + halfGap, 264 - offset - halfGap);
+                    if (segment == 4) {
+                        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                                   360 - halfGap, 360);
+                        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                                   0, halfGap);
+                    } else {
+                        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                                   (276 + offset - halfGap) % 360, (276 + offset + halfGap) % 360);
+                    }
+                }
             }
         }
 
@@ -220,21 +300,21 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     private function drawDate(dc as Dc, cx, h, scale) as Void {
         var now = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
         var style = getSetting("labelLanguage", STYLE_ENGLISH);
-        var font = mCollegeLabel;
+        var font = mCollegeValue;
         var dateText = "";
 
         if (style == STYLE_CHINESE) {
             var daysCn = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
             dateText = daysCn[now.day_of_week - 1] + " " + now.day.format("%02d");
-            if (mCustomLabelFont != null) {
-                font = mCustomLabelFont;
+            if (mCustomDateFont != null) {
+                font = mCustomDateFont;
             }
         } else {
             var daysEn = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
             dateText = daysEn[now.day_of_week - 1] + " " + now.day.format("%02d");
         }
 
-        drawText(dc, cx, (h * 0.13).toNumber() + px(5, scale), font, dateText,
+        drawText(dc, cx, (h * 0.13).toNumber() - px(2, scale), font, dateText,
                  mLowPower ? COLOR_MUTED : mWatchBatteryColor, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
