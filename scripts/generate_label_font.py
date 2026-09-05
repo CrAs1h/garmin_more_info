@@ -88,7 +88,7 @@ def generate_font(output_dir):
             except Exception:
                 pass
 
-    chinese_chars = "心率身电量卡路里距离步数"
+    chars_to_add = "心率身电量卡路里距离步数周一二三四五六日星期 0123456789"
     
     icons = {
         'A': draw_steps_icon(20),
@@ -101,10 +101,10 @@ def generate_font(output_dir):
 
     # 计算各字符图像
     char_images = {}
-    for ch in chinese_chars:
+    for ch in chars_to_add:
         bbox = font.getbbox(ch)  # (left, top, right, bottom)
-        w = bbox[2] - bbox[0]
-        h = bbox[3] - bbox[1]
+        w = max(1, bbox[2] - bbox[0])
+        h = max(1, bbox[3] - bbox[1])
         
         # 留白边距
         glyph_img = Image.new("RGBA", (w + 2, h + 2), (0, 0, 0, 0))
@@ -118,15 +118,18 @@ def generate_font(output_dir):
             xoffset = bbox_actual[0] + bbox[0] - 1
             yoffset = bbox_actual[1] + bbox[1] - 1
         else:
-            glyph_cropped = glyph_img
+            glyph_cropped = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
             xoffset = 0
             yoffset = 0
         
+        adv = int(round(font.getlength(ch)))
+        if adv <= 0:
+            adv = font_size
         char_images[ord(ch)] = {
             'img': glyph_cropped,
             'xoffset': xoffset,
             'yoffset': yoffset,
-            'xadvance': font_size,
+            'xadvance': adv,
         }
 
     for ch_key, icon_img in icons.items():

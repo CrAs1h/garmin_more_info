@@ -4,7 +4,7 @@
     <string id="DeviceIdTitle">设备ID（发给客服激活）</string>
     <string id="LicenseTitle">激活码</string>
     <string id="LicensePrompt">请输入激活码</string>
-    <string id="DataLabelLanguageTitle">数据项标签样式</string>
+    <string id="DataLabelLanguageTitle">语言与标签样式</string>
     <string id="LanguageEnglish">1 简易英文</string>
     <string id="LanguageChinese">2 中文名称</string>
     <string id="StyleIcons">3 小图标符号</string>

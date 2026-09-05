@@ -3,6 +3,7 @@ import Toybox.ActivityMonitor;
 import Toybox.Application;
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.SensorHistory;
 import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
@@ -98,9 +99,22 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
     private function drawDate(dc as Dc, cx, h) as Void {
         var now = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
-        var days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-        var dateText = days[now.day_of_week - 1] + " " + now.day.format("%02d");
-        drawText(dc, cx, (h * 0.105).toNumber(), Graphics.FONT_SMALL, dateText,
+        var style = getSetting("labelLanguage", STYLE_ENGLISH);
+        var font = Graphics.FONT_SMALL;
+        var dateText = "";
+
+        if (style == STYLE_CHINESE) {
+            var daysCn = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+            dateText = daysCn[now.day_of_week - 1] + " " + now.day.format("%02d");
+            if (mCustomLabelFont != null) {
+                font = mCustomLabelFont;
+            }
+        } else {
+            var daysEn = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            dateText = daysEn[now.day_of_week - 1] + " " + now.day.format("%02d");
+        }
+
+        drawText(dc, cx, (h * 0.105).toNumber(), font, dateText,
                  mLowPower ? COLOR_MUTED : COLOR_ACCENT, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
@@ -209,8 +223,14 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         if (dataType == DATA_BODY_BATTERY) {
             var body = null;
             try {
-                if (activity != null && activity has :bodyBattery && activity.bodyBattery != null) {
-                    body = activity.bodyBattery;
+                if ((Toybox has :SensorHistory) && (Toybox.SensorHistory has :getBodyBatteryHistory)) {
+                    var bbIter = Toybox.SensorHistory.getBodyBatteryHistory({:period => 1});
+                    if (bbIter != null) {
+                        var sample = bbIter.next();
+                        if (sample != null && sample.data != null) {
+                            body = sample.data.toNumber();
+                        }
+                    }
                 }
             } catch (ex) {}
             var label = "BODY";
