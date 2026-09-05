@@ -104,8 +104,8 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         dc.clear();
 
         drawOrbit(dc, cx, cy, edge, scale);
-        drawDate(dc, cx, h);
-        drawTime(dc, cx, h);
+        drawDate(dc, cx, h, scale);
+        drawTime(dc, cx, h, scale);
         if (!mLowPower) {
             drawDataSlots(dc, cx, h, edge, scale);
         }
@@ -194,7 +194,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         dc.drawLine(edge - px(12, scale), cy, edge - px(4, scale), cy);
     }
 
-    private function drawDate(dc as Dc, cx, h) as Void {
+    private function drawDate(dc as Dc, cx, h, scale) as Void {
         var now = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
         var style = getSetting("labelLanguage", STYLE_ENGLISH);
         var font = mCollegeLabel;
@@ -211,15 +211,15 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             dateText = daysEn[now.day_of_week - 1] + " " + now.day.format("%02d");
         }
 
-        drawText(dc, cx, (h * 0.13).toNumber(), font, dateText,
+        drawText(dc, cx, (h * 0.13).toNumber() + px(5, scale), font, dateText,
                  mLowPower ? COLOR_MUTED : mWatchBatteryColor, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
-    private function drawTime(dc as Dc, cx, h) as Void {
+    private function drawTime(dc as Dc, cx, h, scale) as Void {
         var clock = System.getClockTime();
         var hour = clock.hour;
         var timeText = hour.format("%02d") + ":" + clock.min.format("%02d");
-        drawText(dc, cx, (h * 0.23).toNumber(), mCollegeTime, timeText,
+        drawText(dc, cx, (h * 0.23).toNumber() + px(5, scale), mCollegeTime, timeText,
                  COLOR_PRIMARY, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
@@ -227,9 +227,9 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         // The usable bottom edge of a round display is higher at the two column
         // centers than it is on the vertical center line. Reserve a conservative
         // circular safe area and split it evenly between both rows.
-        var dx = (edge * 0.22).toNumber();
-        var dataTop = (h * 0.48).toNumber();
-        var dataBottom = (h * 0.84).toNumber();
+        var dx = (edge * 0.22).toNumber() - px(13, scale);
+        var dataTop = (h * 0.48).toNumber() + px(9, scale);
+        var dataBottom = (h * 0.84).toNumber() + px(9, scale);
         var rowHeight = (dataBottom - dataTop) / 2;
         var topY = dataTop;
         var bottomY = dataTop + rowHeight;
@@ -385,7 +385,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         var label = "STEPS";
         if (style == STYLE_CHINESE) { label = "步数"; }
         else if (style == STYLE_ICONS) { label = "A"; }
-        return [steps.format("%d"), label];
+        return [formatWithCommas(steps), label];
     }
 
     // Read on refresh so settings changes apply without recreating the view.
@@ -480,6 +480,23 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             if (value != null && value instanceof Lang.Number) { return value as Lang.Number; }
         } catch (ex) {}
         return fallback;
+    }
+
+    private function formatWithCommas(value) {
+        if (value < 0) {
+            return "-" + formatWithCommas(-value);
+        }
+        if (value < 1000) {
+            return value.format("%d");
+        }
+        var s = "";
+        var temp = value;
+        while (temp >= 1000) {
+            var rem = temp % 1000;
+            s = "," + rem.format("%03d") + s;
+            temp = temp / 1000;
+        }
+        return temp.format("%d") + s;
     }
 
     private function compactNumber(value) {

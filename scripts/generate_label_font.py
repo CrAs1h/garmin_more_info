@@ -73,9 +73,9 @@ def generate_font(output_dir):
     fnt_path = os.path.join(output_dir, "custom_label.fnt")
     png_path = os.path.join(output_dir, "custom_label_0.png")
 
-    font_size = 20
+    font_size = 22
     line_height = 24
-    base_line = 20
+    base_line = 21
 
     # 加载系统微软雅黑或黑体
     font_files = ['C:/Windows/Fonts/msyhbd.ttc', 'C:/Windows/Fonts/msyh.ttc', 'C:/Windows/Fonts/simhei.ttf']

@@ -77,7 +77,7 @@ def main():
         specs = [("CollegeTime", "0123456789:", int(width * .22)),
                  ("CollegeValue", "0123456789.,-%K", int(width * .08)),
                  ("CollegeSmall", "0123456789.,-%K", max(8, int(width * .042))),
-                 ("CollegeLabel", " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", int(width * .062))]
+                 ("CollegeLabel", " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", int(width * .08))]
         names = []
         for family, font_path in families.items():
             for original_name, chars, height in specs:
