@@ -75,22 +75,52 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
     private function drawOrbit(dc as Dc, cx, cy, edge, scale) as Void {
         var radius = edge / 2 - px(8, scale);
-        var battery = System.getSystemStats().battery;
-        var sweep = (battery * 270 / 100).toNumber();
+        var penWidth = px(5, scale);
+        var activeColor = mLowPower ? COLOR_MUTED : COLOR_ACCENT;
 
-        dc.setPenWidth(px(5, scale));
+        dc.setPenWidth(penWidth);
+
+        // 1. 左侧轨（手表电量）：从 6点钟(264°) 顺时针延伸至 12点钟(96°)，总跨度 168°
+        // 暗灰底轨
         dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 225, 135);
-        dc.setColor(mLowPower ? COLOR_MUTED : COLOR_ACCENT, Graphics.COLOR_TRANSPARENT);
-        var endAngle = 225 + sweep;
-        if (endAngle <= 360) {
-            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 225, endAngle);
-        } else {
-            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 225, 360);
-            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 0, endAngle - 360);
+        dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, 96);
+
+        // 手表电量高亮进度
+        var watchBattery = System.getSystemStats().battery;
+        if (watchBattery > 0) {
+            if (watchBattery > 100) { watchBattery = 100; }
+            var watchSweep = (watchBattery * 168 / 100).toNumber();
+            if (watchSweep < 1) { watchSweep = 1; }
+            var watchEnd = 264 - watchSweep;
+            dc.setColor(activeColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, watchEnd);
         }
 
+        // 2. 右侧轨（身体电量）：从 6点钟(276°) 逆时针延伸至 12点钟(84°)，总跨度 168°
+        // 暗灰底轨
+        dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 84);
+
+        // 身体电量高亮进度
+        var bodyBattery = getBodyBattery();
+        if (bodyBattery != null && bodyBattery > 0) {
+            if (bodyBattery > 100) { bodyBattery = 100; }
+            var bodySweep = (bodyBattery * 168 / 100).toNumber();
+            if (bodySweep < 1) { bodySweep = 1; }
+            var bodyEnd = 276 + bodySweep;
+            dc.setColor(activeColor, Graphics.COLOR_TRANSPARENT);
+            if (bodyEnd <= 360) {
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, bodyEnd);
+            } else {
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 360);
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 0, bodyEnd - 360);
+            }
+        }
+
+        // 3. 四方方位刻度线（Tick Marks）
+        // 12点与6点方向小短线居中分隔左右双轨；3点与9点小短线指示左右轨 50% 标线
         dc.setPenWidth(px(3, scale));
+        dc.setColor(activeColor, Graphics.COLOR_TRANSPARENT);
         dc.drawLine(cx, px(4, scale), cx, px(12, scale));
         dc.drawLine(cx, edge - px(12, scale), cx, edge - px(4, scale));
         dc.drawLine(px(4, scale), cy, px(12, scale), cy);
@@ -221,18 +251,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         }
 
         if (dataType == DATA_BODY_BATTERY) {
-            var body = null;
-            try {
-                if ((Toybox has :SensorHistory) && (Toybox.SensorHistory has :getBodyBatteryHistory)) {
-                    var bbIter = Toybox.SensorHistory.getBodyBatteryHistory({:period => 1});
-                    if (bbIter != null) {
-                        var sample = bbIter.next();
-                        if (sample != null && sample.data != null) {
-                            body = sample.data.toNumber();
-                        }
-                    }
-                }
-            } catch (ex) {}
+            var body = getBodyBattery();
             var label = "BODY";
             if (style == STYLE_CHINESE) { label = "身电"; }
             else if (style == STYLE_ICONS) { label = "C"; }
@@ -307,5 +326,20 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     private function px(value, scale) {
         var result = (value * scale).toNumber();
         return result < 1 ? 1 : result;
+    }
+
+    private function getBodyBattery() as Lang.Number? {
+        try {
+            if ((Toybox has :SensorHistory) && (Toybox.SensorHistory has :getBodyBatteryHistory)) {
+                var bbIter = Toybox.SensorHistory.getBodyBatteryHistory({:period => 1});
+                if (bbIter != null) {
+                    var sample = bbIter.next();
+                    if (sample != null && sample.data != null) {
+                        return sample.data.toNumber();
+                    }
+                }
+            }
+        } catch (ex) {}
+        return null;
     }
 }
