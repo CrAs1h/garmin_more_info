@@ -1,0 +1,15 @@
+info face="BreeSerifTime" size=124 bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=1,1
+common lineHeight=91 base=91 scaleW=256 scaleH=263 pages=1 packed=0
+page id=0 file="BreeSerifTime.png"
+chars count=11
+char id=48 x=1 y=1 width=66 height=84 xoffset=0 yoffset=7 xadvance=66 page=0 chnl=15
+char id=49 x=68 y=1 width=56 height=80 xoffset=0 yoffset=9 xadvance=56 page=0 chnl=15
+char id=50 x=125 y=1 width=64 height=82 xoffset=0 yoffset=7 xadvance=64 page=0 chnl=15
+char id=51 x=190 y=1 width=65 height=84 xoffset=0 yoffset=7 xadvance=65 page=0 chnl=15
+char id=52 x=1 y=86 width=66 height=82 xoffset=0 yoffset=7 xadvance=66 page=0 chnl=15
+char id=53 x=68 y=86 width=63 height=91 xoffset=0 yoffset=0 xadvance=63 page=0 chnl=15
+char id=54 x=132 y=86 width=66 height=86 xoffset=0 yoffset=5 xadvance=66 page=0 chnl=15
+char id=55 x=1 y=178 width=59 height=80 xoffset=0 yoffset=9 xadvance=59 page=0 chnl=15
+char id=56 x=61 y=178 width=66 height=84 xoffset=0 yoffset=7 xadvance=66 page=0 chnl=15
+char id=57 x=128 y=178 width=66 height=84 xoffset=0 yoffset=7 xadvance=66 page=0 chnl=15
+char id=58 x=195 y=178 width=28 height=64 xoffset=0 yoffset=27 xadvance=28 page=0 chnl=15

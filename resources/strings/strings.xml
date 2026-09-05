@@ -1,10 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <strings>
+    <string id="FontStyleTitle">表盘字体</string>
+    <string id="FontCollege">College（默认）</string>
+    <string id="FontBreeSerif">Bree Serif</string>
+    <string id="FontGorditas">Gorditas</string>
+    <string id="FontLumberjack">Lumberjack</string>
     <string id="AppName">Garmin More Info</string>
     <string id="DeviceIdTitle">设备ID（发给客服激活）</string>
     <string id="LicenseTitle">激活码</string>
     <string id="LicensePrompt">请输入激活码</string>
     <string id="DataLabelLanguageTitle">语言与标签样式</string>
+    <string id="ColorThemeTitle">配色主题</string>
+    <string id="BatteryBarStyleTitle">电量条样式</string>
+    <string id="BatteryBarSegmented">分段展示</string>
+    <string id="BatteryBarSolid">长实线</string>
+    <string id="ThemeLime">经典荧光绿（默认）</string>
+    <string id="ThemeBlue">冰川蓝</string>
+    <string id="ThemeOrange">日落橙</string>
+    <string id="ThemePurple">薰衣紫</string>
+    <string id="ThemeWhite">极简白</string>
+    <string id="ThemeMint">清透薄荷</string>
+    <string id="ThemeRose">柔雾玫瑰</string>
+    <string id="ThemeCream">奶油香草</string>
+    <string id="ThemeSage">鼠尾草绿</string>
+    <string id="ThemePeach">蜜桃珊瑚</string>
+    <string id="ThemePeriwinkle">长春花蓝</string>
+    <string id="ThemeSageRose">[撞色] 鼠尾草与玫瑰</string>
+    <string id="ThemeBlueCream">[撞色] 雾蓝与奶油</string>
+    <string id="ThemePeachPeriwinkle">[撞色] 蜜桃与长春花</string>
+    <string id="ThemeAquaLilac">[撞色] 水绿与丁香</string>
+    <string id="ThemeRoseAqua">[撞色] 藕粉与湖青</string>
+    <string id="ThemeApricotSage">[撞色] 杏金与苔绿</string>
+    <string id="ThemeMistApricot">[撞色] 雾青与暖杏</string>
+    <string id="ThemeMintRose">[撞色] 薄荷与柔粉</string>
+    <string id="ThemeLavenderCream">[撞色] 薰衣紫与奶油黄</string>
+    <string id="ThemeBlueTerracotta">[撞色] 灰蓝与陶粉</string>
     <string id="LanguageEnglish">1 简易英文</string>
     <string id="LanguageChinese">2 中文名称</string>
     <string id="StyleIcons">3 小图标符号</string>
@@ -19,4 +49,3 @@
     <string id="DataCalories">卡路里</string>
     <string id="DataDistance">距离</string>
 </strings>
-

@@ -1,0 +1,18 @@
+<fonts>
+    <font id="CollegeTime" filename="CollegeTime.fnt" />
+    <font id="CollegeValue" filename="CollegeValue.fnt" />
+    <font id="CollegeSmall" filename="CollegeSmall.fnt" />
+    <font id="CollegeLabel" filename="CollegeLabel.fnt" />
+    <font id="BreeSerifTime" filename="BreeSerifTime.fnt" />
+    <font id="BreeSerifValue" filename="BreeSerifValue.fnt" />
+    <font id="BreeSerifSmall" filename="BreeSerifSmall.fnt" />
+    <font id="BreeSerifLabel" filename="BreeSerifLabel.fnt" />
+    <font id="GorditasTime" filename="GorditasTime.fnt" />
+    <font id="GorditasValue" filename="GorditasValue.fnt" />
+    <font id="GorditasSmall" filename="GorditasSmall.fnt" />
+    <font id="GorditasLabel" filename="GorditasLabel.fnt" />
+    <font id="LumberjackTime" filename="LumberjackTime.fnt" />
+    <font id="LumberjackValue" filename="LumberjackValue.fnt" />
+    <font id="LumberjackSmall" filename="LumberjackSmall.fnt" />
+    <font id="LumberjackLabel" filename="LumberjackLabel.fnt" />
+</fonts>

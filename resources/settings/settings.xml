@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <settings>
+    <setting propertyKey="@Properties.fontStyle" title="@Strings.FontStyleTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FontCollege</listEntry>
+            <listEntry value="1">@Strings.FontBreeSerif</listEntry>
+            <listEntry value="2">@Strings.FontGorditas</listEntry>
+            <listEntry value="3">@Strings.FontLumberjack</listEntry>
+        </settingConfig>
+    </setting>
     <!-- 设备ID（只读展示，用户需要将此ID发送给卖家） -->
     <setting propertyKey="@Properties.deviceId" title="@Strings.DeviceIdTitle">
         <settingConfig type="alphaNumeric" readonly="true" />
@@ -8,6 +16,39 @@
     <!-- 激活码输入 -->
     <setting propertyKey="@Properties.licenseKey" title="@Strings.LicenseTitle" prompt="@Strings.LicensePrompt">
         <settingConfig type="alphaNumeric" />
+    </setting>
+
+    <setting propertyKey="@Properties.colorTheme" title="@Strings.ColorThemeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ThemeLime</listEntry>
+            <listEntry value="1">@Strings.ThemeBlue</listEntry>
+            <listEntry value="2">@Strings.ThemeOrange</listEntry>
+            <listEntry value="3">@Strings.ThemePurple</listEntry>
+            <listEntry value="4">@Strings.ThemeWhite</listEntry>
+            <listEntry value="9">@Strings.ThemeMint</listEntry>
+            <listEntry value="10">@Strings.ThemeRose</listEntry>
+            <listEntry value="11">@Strings.ThemeCream</listEntry>
+            <listEntry value="12">@Strings.ThemeSage</listEntry>
+            <listEntry value="13">@Strings.ThemePeach</listEntry>
+            <listEntry value="14">@Strings.ThemePeriwinkle</listEntry>
+            <listEntry value="5">@Strings.ThemeMistApricot</listEntry>
+            <listEntry value="6">@Strings.ThemeMintRose</listEntry>
+            <listEntry value="7">@Strings.ThemeLavenderCream</listEntry>
+            <listEntry value="8">@Strings.ThemeBlueTerracotta</listEntry>
+            <listEntry value="15">@Strings.ThemeSageRose</listEntry>
+            <listEntry value="16">@Strings.ThemeBlueCream</listEntry>
+            <listEntry value="17">@Strings.ThemePeachPeriwinkle</listEntry>
+            <listEntry value="18">@Strings.ThemeAquaLilac</listEntry>
+            <listEntry value="19">@Strings.ThemeRoseAqua</listEntry>
+            <listEntry value="20">@Strings.ThemeApricotSage</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.batteryBarStyle" title="@Strings.BatteryBarStyleTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.BatteryBarSegmented</listEntry>
+            <listEntry value="1">@Strings.BatteryBarSolid</listEntry>
+        </settingConfig>
     </setting>
 
     <!-- 表盘数据项名称样式（1 简易英文，2 中文名称，3 小图标符号） -->
@@ -21,22 +62,18 @@
 
     <setting propertyKey="@Properties.dataSlot1" title="@Strings.DataSlot1Title"><settingConfig type="list">
         <listEntry value="0">@Strings.DataSteps</listEntry><listEntry value="1">@Strings.DataHeartRate</listEntry>
-        <listEntry value="2">@Strings.DataBodyBattery</listEntry><listEntry value="3">@Strings.DataWatchBattery</listEntry>
         <listEntry value="4">@Strings.DataCalories</listEntry><listEntry value="5">@Strings.DataDistance</listEntry>
     </settingConfig></setting>
     <setting propertyKey="@Properties.dataSlot2" title="@Strings.DataSlot2Title"><settingConfig type="list">
         <listEntry value="0">@Strings.DataSteps</listEntry><listEntry value="1">@Strings.DataHeartRate</listEntry>
-        <listEntry value="2">@Strings.DataBodyBattery</listEntry><listEntry value="3">@Strings.DataWatchBattery</listEntry>
         <listEntry value="4">@Strings.DataCalories</listEntry><listEntry value="5">@Strings.DataDistance</listEntry>
     </settingConfig></setting>
     <setting propertyKey="@Properties.dataSlot3" title="@Strings.DataSlot3Title"><settingConfig type="list">
         <listEntry value="0">@Strings.DataSteps</listEntry><listEntry value="1">@Strings.DataHeartRate</listEntry>
-        <listEntry value="2">@Strings.DataBodyBattery</listEntry><listEntry value="3">@Strings.DataWatchBattery</listEntry>
         <listEntry value="4">@Strings.DataCalories</listEntry><listEntry value="5">@Strings.DataDistance</listEntry>
     </settingConfig></setting>
     <setting propertyKey="@Properties.dataSlot4" title="@Strings.DataSlot4Title"><settingConfig type="list">
         <listEntry value="0">@Strings.DataSteps</listEntry><listEntry value="1">@Strings.DataHeartRate</listEntry>
-        <listEntry value="2">@Strings.DataBodyBattery</listEntry><listEntry value="3">@Strings.DataWatchBattery</listEntry>
         <listEntry value="4">@Strings.DataCalories</listEntry><listEntry value="5">@Strings.DataDistance</listEntry>
     </settingConfig></setting>
 </settings>

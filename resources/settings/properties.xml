@@ -3,8 +3,11 @@
     <property id="deviceId" type="string"></property>
     <property id="licenseKey" type="string"></property>
     <property id="labelLanguage" type="number">1</property>
+    <property id="colorTheme" type="number">0</property>
+    <property id="batteryBarStyle" type="number">0</property>
+    <property id="fontStyle" type="number">0</property>
     <property id="dataSlot1" type="number">0</property>
     <property id="dataSlot2" type="number">1</property>
-    <property id="dataSlot3" type="number">2</property>
-    <property id="dataSlot4" type="number">3</property>
+    <property id="dataSlot3" type="number">4</property>
+    <property id="dataSlot4" type="number">5</property>
 </properties>

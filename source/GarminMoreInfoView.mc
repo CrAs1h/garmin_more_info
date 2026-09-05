@@ -24,15 +24,23 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
     private const COLOR_BACKGROUND = 0x000000;
     private const COLOR_PRIMARY = 0xF6F2EA;
-    private const COLOR_ACCENT = 0xC6FF00;
+    private var mAccentColor = 0xC6FF00;
+    private var mWatchBatteryColor = 0xC6FF00;
+    private var mBodyBatteryColor = 0xC6FF00;
     private const COLOR_MUTED = 0x8A8A8A;
     private const COLOR_TRACK = 0x2A2A2A;
 
     private var mLowPower = false;
     private var mCustomLabelFont as WatchUi.FontResource? = null;
+    private var mCollegeTime;
+    private var mCollegeValue;
+    private var mCollegeSmall;
+    private var mCollegeLabel;
+    private var mFontStyle = -1;
 
     function initialize(licenseManager as LicenseManager?) {
         WatchFace.initialize();
+        updateFonts();
         try {
             mCustomLabelFont = WatchUi.loadResource(Rez.Fonts.CustomLabelFont) as WatchUi.FontResource;
         } catch (ex) {
@@ -41,6 +49,34 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     }
 
     function onLayout(dc as Dc) as Void {}
+
+    private function updateFonts() as Void {
+        var selected = getSetting("fontStyle", 0);
+        if (selected < 0 || selected > 3) { selected = 0; }
+        if (selected == mFontStyle) { return; }
+        var ids = [Rez.Fonts.CollegeTime, Rez.Fonts.CollegeValue,
+                   Rez.Fonts.CollegeSmall, Rez.Fonts.CollegeLabel];
+        if (selected == 1) {
+            ids = [Rez.Fonts.BreeSerifTime, Rez.Fonts.BreeSerifValue,
+                   Rez.Fonts.BreeSerifSmall, Rez.Fonts.BreeSerifLabel];
+        } else if (selected == 2) {
+            ids = [Rez.Fonts.GorditasTime, Rez.Fonts.GorditasValue,
+                   Rez.Fonts.GorditasSmall, Rez.Fonts.GorditasLabel];
+        } else if (selected == 3) {
+            ids = [Rez.Fonts.LumberjackTime, Rez.Fonts.LumberjackValue,
+                   Rez.Fonts.LumberjackSmall, Rez.Fonts.LumberjackLabel];
+        }
+        // Release the previous family before loading the selected resources.
+        mCollegeTime = null;
+        mCollegeValue = null;
+        mCollegeSmall = null;
+        mCollegeLabel = null;
+        mCollegeTime = WatchUi.loadResource(ids[0]);
+        mCollegeValue = WatchUi.loadResource(ids[1]);
+        mCollegeSmall = WatchUi.loadResource(ids[2]);
+        mCollegeLabel = WatchUi.loadResource(ids[3]);
+        mFontStyle = selected;
+    }
     function onShow() as Void {}
     function onHide() as Void {}
 
@@ -55,6 +91,8 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     }
 
     function onUpdate(dc as Dc) as Void {
+        updateFonts();
+        updateTheme();
         var w = dc.getWidth();
         var h = dc.getHeight();
         var edge = w < h ? w : h;
@@ -76,7 +114,9 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     private function drawOrbit(dc as Dc, cx, cy, edge, scale) as Void {
         var radius = edge / 2 - px(8, scale);
         var penWidth = px(5, scale);
-        var activeColor = mLowPower ? COLOR_MUTED : COLOR_ACCENT;
+        var activeColor = mLowPower ? COLOR_MUTED : mAccentColor;
+        var watchColor = mLowPower ? COLOR_MUTED : mWatchBatteryColor;
+        var bodyColor = mLowPower ? COLOR_MUTED : mBodyBatteryColor;
 
         dc.setPenWidth(penWidth);
 
@@ -92,7 +132,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             var watchSweep = (watchBattery * 168 / 100).toNumber();
             if (watchSweep < 1) { watchSweep = 1; }
             var watchEnd = 264 - watchSweep;
-            dc.setColor(activeColor, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(watchColor, Graphics.COLOR_TRANSPARENT);
             dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, watchEnd);
         }
 
@@ -108,12 +148,39 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             var bodySweep = (bodyBattery * 168 / 100).toNumber();
             if (bodySweep < 1) { bodySweep = 1; }
             var bodyEnd = 276 + bodySweep;
-            dc.setColor(activeColor, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(bodyColor, Graphics.COLOR_TRANSPARENT);
             if (bodyEnd <= 360) {
                 dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, bodyEnd);
             } else {
                 dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 360);
                 dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 0, bodyEnd - 360);
+            }
+        }
+
+        // Eight segments place the middle gap directly at the 3/9 o'clock ticks.
+        // Mask after drawing progress so partial segments still show the exact
+        // battery level, and empty track segments have the same spacing.
+        dc.setPenWidth(penWidth + px(2, scale));
+        dc.setColor(COLOR_BACKGROUND, Graphics.COLOR_TRANSPARENT);
+        // Only the explicit solid value disables segmentation. Both styles
+        // retain clearance around the side ticks to avoid overlapping them.
+        var segmented = getSetting("batteryBarStyle", 0) != 1;
+        for (var segment = 1; segment < 8; segment++) {
+            if (!segmented && segment != 4) { continue; }
+            var offset = segment * 21;
+            // Extra clearance keeps the tick separate from both arc ends.
+            var halfGap = segment == 4 ? 4 : 2;
+            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE,
+                       264 - offset + halfGap, 264 - offset - halfGap);
+            if (segment == 4) {
+                // Split the right tick gap at the 360/0 degree boundary.
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                           360 - halfGap, 360);
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                           0, halfGap);
+            } else {
+                dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE,
+                           (276 + offset - halfGap) % 360, (276 + offset + halfGap) % 360);
             }
         }
 
@@ -130,7 +197,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     private function drawDate(dc as Dc, cx, h) as Void {
         var now = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
         var style = getSetting("labelLanguage", STYLE_ENGLISH);
-        var font = Graphics.FONT_SMALL;
+        var font = mCollegeLabel;
         var dateText = "";
 
         if (style == STYLE_CHINESE) {
@@ -144,19 +211,15 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             dateText = daysEn[now.day_of_week - 1] + " " + now.day.format("%02d");
         }
 
-        drawText(dc, cx, (h * 0.105).toNumber(), font, dateText,
-                 mLowPower ? COLOR_MUTED : COLOR_ACCENT, Graphics.TEXT_JUSTIFY_CENTER);
+        drawText(dc, cx, (h * 0.13).toNumber(), font, dateText,
+                 mLowPower ? COLOR_MUTED : mWatchBatteryColor, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     private function drawTime(dc as Dc, cx, h) as Void {
         var clock = System.getClockTime();
         var hour = clock.hour;
-        if (!System.getDeviceSettings().is24Hour) {
-            hour = hour % 12;
-            if (hour == 0) { hour = 12; }
-        }
         var timeText = hour.format("%02d") + ":" + clock.min.format("%02d");
-        drawText(dc, cx, (h * 0.205).toNumber(), Graphics.FONT_NUMBER_HOT, timeText,
+        drawText(dc, cx, (h * 0.23).toNumber(), mCollegeTime, timeText,
                  COLOR_PRIMARY, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
@@ -172,47 +235,79 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         var bottomY = dataTop + rowHeight;
         var slotWidth = (edge * 0.35).toNumber();
         var style = getSetting("labelLanguage", STYLE_ENGLISH);
-        drawDataSlot(dc, cx - dx, topY, getSetting("dataSlot1", DATA_STEPS), scale, slotWidth, rowHeight, style);
-        drawDataSlot(dc, cx + dx, topY, getSetting("dataSlot2", DATA_HEART_RATE), scale, slotWidth, rowHeight, style);
-        drawDataSlot(dc, cx - dx, bottomY, getSetting("dataSlot3", DATA_BODY_BATTERY), scale, slotWidth, rowHeight, style);
-        drawDataSlot(dc, cx + dx, bottomY, getSetting("dataSlot4", DATA_WATCH_BATTERY), scale, slotWidth, rowHeight, style);
+        var slot1 = getSetting("dataSlot1", DATA_STEPS);
+        if (slot1 == DATA_BODY_BATTERY || slot1 == DATA_WATCH_BATTERY) {
+            slot1 = DATA_STEPS;
+        }
+        var slot2 = getSetting("dataSlot2", DATA_HEART_RATE);
+        if (slot2 == DATA_BODY_BATTERY || slot2 == DATA_WATCH_BATTERY) {
+            slot2 = DATA_HEART_RATE;
+        }
+        var slot3 = getSetting("dataSlot3", DATA_CALORIES);
+        if (slot3 == DATA_BODY_BATTERY || slot3 == DATA_WATCH_BATTERY) {
+            slot3 = DATA_CALORIES;
+        }
+        var slot4 = getSetting("dataSlot4", DATA_DISTANCE);
+        if (slot4 == DATA_BODY_BATTERY || slot4 == DATA_WATCH_BATTERY) {
+            slot4 = DATA_DISTANCE;
+        }
+
+        drawDataSlot(dc, cx - dx, topY, slot1, scale, slotWidth, rowHeight, style);
+        drawDataSlot(dc, cx + dx, topY, slot2, scale, slotWidth, rowHeight, style);
+        drawDataSlot(dc, cx - dx, bottomY, slot3, scale, slotWidth, rowHeight, style);
+        drawDataSlot(dc, cx + dx, bottomY, slot4, scale, slotWidth, rowHeight, style);
     }
 
     private function drawDataSlot(dc as Dc, x, y, dataType, scale, slotWidth, rowHeight, style) as Void {
         var metric = readMetric(dataType, style) as Lang.Array;
         var value = metric[0];
         var label = metric[1];
-        var labelFont = Graphics.FONT_TINY;
+        var isTwoTone = mWatchBatteryColor != mBodyBatteryColor;
+        var columnColor = x < dc.getWidth() / 2 ? mWatchBatteryColor : mBodyBatteryColor;
+        var labelColor = isTwoTone ? columnColor : COLOR_PRIMARY;
+        var decorationColor = isTwoTone ? columnColor : mAccentColor;
+        var labelFont = mCollegeLabel;
         if ((style == STYLE_CHINESE || style == STYLE_ICONS) && mCustomLabelFont != null) {
             labelFont = mCustomLabelFont;
         }
 
         var labelHeight = dc.getFontHeight(labelFont);
-        var valueHeight = rowHeight - labelHeight - px(2, scale);
+        var labelGap = px(3, scale);
+        var valueHeight = rowHeight - labelHeight - labelGap;
         var valueFont = fitMetricFont(dc, value, slotWidth, valueHeight);
-        drawText(dc, x, y, valueFont, value, COLOR_ACCENT,
+        var valHeight = dc.getFontHeight(valueFont);
+
+        // 垂直居中排布数值与字段名称，并赋予舒适的上下间距
+        var totalHeight = valHeight + labelGap + labelHeight;
+        var valueY = y;
+        if (rowHeight > totalHeight) {
+            valueY = y + (rowHeight - totalHeight) / 2;
+        }
+        var labelY = valueY + valHeight + labelGap;
+
+        drawText(dc, x, valueY, valueFont, value, mAccentColor,
                  Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Position labels from the actual device font metrics. This is stable
-        // across MIP and AMOLED families whose font tables differ significantly.
-        var labelY = y + dc.getFontHeight(valueFont) - px(2, scale);
-
         if (style == STYLE_ICONS) {
-            // 图标模式：居中以高亮色绘制图标符号
-            drawText(dc, x, labelY, labelFont, label, COLOR_ACCENT,
+            // 图标模式：居中以强调色绘制图标符号
+            drawText(dc, x, labelY, labelFont, label, decorationColor,
                      Graphics.TEXT_JUSTIFY_CENTER);
         } else {
-            // 文本模式（中文或英文）：在左侧带有小菱形装饰点
-            var labelWidth = dc.getTextWidthInPixels(label, labelFont);
-            drawDiamond(dc, x - labelWidth / 2 - px(8, scale),
-                        labelY + labelHeight / 2,
-                        px(3, scale));
-            drawText(dc, x + px(3, scale), labelY, labelFont, label, COLOR_PRIMARY,
+            // 文本模式（中文或英文）：居中绘制字段名称（已去掉前置菱形）
+            drawText(dc, x, labelY, labelFont, label, labelColor,
                      Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 
     private function fitMetricFont(dc as Dc, value, slotWidth, maxHeight) {
+        if (dc.getTextWidthInPixels(value, mCollegeValue) <= slotWidth &&
+            dc.getFontHeight(mCollegeValue) <= maxHeight) {
+            return mCollegeValue;
+        }
+        if (dc.getTextWidthInPixels(value, mCollegeSmall) <= slotWidth &&
+            dc.getFontHeight(mCollegeSmall) <= maxHeight) {
+            return mCollegeSmall;
+        }
         // Garmin font tables vary between MIP and AMOLED devices. A font must
         // satisfy both axes; width-only fitting can still clip the lower row.
         if (dc.getTextWidthInPixels(value, Graphics.FONT_NUMBER_MEDIUM) <= slotWidth &&
@@ -290,7 +385,93 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         var label = "STEPS";
         if (style == STYLE_CHINESE) { label = "步数"; }
         else if (style == STYLE_ICONS) { label = "A"; }
-        return [compactNumber(steps), label];
+        return [steps.format("%d"), label];
+    }
+
+    // Read on refresh so settings changes apply without recreating the view.
+    // Missing or unsupported values retain the original theme.
+    private function updateTheme() as Void {
+        var theme = getSetting("colorTheme", 0);
+        // Neutral values and ticks balance the colored arcs, date and labels.
+        mAccentColor = COLOR_PRIMARY;
+        switch (theme) {
+            case 9:
+                mAccentColor = 0x99DDCC;
+                break;
+            case 10:
+                mAccentColor = 0xDDAABB;
+                break;
+            case 11:
+                mAccentColor = 0xEEDD99;
+                break;
+            case 12:
+                mAccentColor = 0xAABB99;
+                break;
+            case 13:
+                mAccentColor = 0xEEAA99;
+                break;
+            case 14:
+                mAccentColor = 0xAAAADD;
+                break;
+            case 15:
+                mWatchBatteryColor = 0xAABB99;
+                mBodyBatteryColor = 0xDDAABB;
+                return;
+            case 16:
+                mWatchBatteryColor = 0x99BBDD;
+                mBodyBatteryColor = 0xEEDD99;
+                return;
+            case 17:
+                mWatchBatteryColor = 0xEEAA99;
+                mBodyBatteryColor = 0xAAAADD;
+                return;
+            case 18:
+                mWatchBatteryColor = 0x99DDCC;
+                mBodyBatteryColor = 0xCCAACC;
+                return;
+            case 19:
+                mWatchBatteryColor = 0xDDBBBB;
+                mBodyBatteryColor = 0x88BBBB;
+                return;
+            case 20:
+                mWatchBatteryColor = 0xDDBB88;
+                mBodyBatteryColor = 0x99BB99;
+                return;
+            case 5:
+                mWatchBatteryColor = 0x99CCCC;
+                mBodyBatteryColor = 0xFFCC99;
+                return;
+            case 6:
+                mWatchBatteryColor = 0x99CCBB;
+                mBodyBatteryColor = 0xDDAABB;
+                return;
+            case 7:
+                mWatchBatteryColor = 0xBBAADD;
+                mBodyBatteryColor = 0xDDCC99;
+                return;
+            case 8:
+                mWatchBatteryColor = 0x99BBDD;
+                mBodyBatteryColor = 0xDDAA99;
+                return;
+            case 1:
+                mAccentColor = 0x66CCFF;
+                break;
+            case 2:
+                mAccentColor = 0xFFAA33;
+                break;
+            case 3:
+                mAccentColor = 0xCC99FF;
+                break;
+            case 4:
+                mAccentColor = 0xF6F2EA;
+                break;
+            default:
+                mAccentColor = 0xC6FF00;
+                break;
+        }
+        // Reset both arcs when returning from a two-tone to a solid theme.
+        mWatchBatteryColor = mAccentColor;
+        mBodyBatteryColor = mAccentColor;
     }
 
     private function getSetting(key, fallback) {
@@ -307,15 +488,6 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             return (value / 1000).format("%d") + "," + (value % 1000).format("%03d");
         }
         return value.format("%d");
-    }
-
-    private function drawDiamond(dc as Dc, x, y, radius) as Void {
-        dc.setColor(COLOR_ACCENT, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(2);
-        dc.drawLine(x, y - radius, x + radius, y);
-        dc.drawLine(x + radius, y, x, y + radius);
-        dc.drawLine(x, y + radius, x - radius, y);
-        dc.drawLine(x - radius, y, x, y - radius);
     }
 
     private function drawText(dc as Dc, x, y, font, value, color, justify) as Void {
