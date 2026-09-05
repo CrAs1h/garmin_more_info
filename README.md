@@ -68,3 +68,13 @@
 ```
 
 应用已使用独立 Connect IQ ID，不会覆盖 `garmin_flower`。
+
+### 按设备 API 筛选字段
+
+四个数据位按目标机型实际提供的接口显示已实现字段：步数、心率、身体电量、手表电量、卡路里、距离、压力、血氧、海拔、气压和传感器温度。身体电量仅在设备提供 `SensorHistory.getBodyBatteryHistory` 时出现；不按 API 版本号推测支持情况。接口存在但暂时没有身体电量或心率读数时显示 `--`，不会因此移除选项。旧配置中的不支持字段或无效字段 ID 回退到该位置的默认字段。
+
+手机端设置是编译资源，不能由表盘运行时代码直接改写下拉列表，因此通过 `scripts/generate_device_settings.py` 读取本地 Garmin `Devices/<id>/<id>.api.debug.xml`，生成 `resources-fields-*` 并配置每个机型的资源路径。生成文件纳入版本管理，IDE 直接编译也生效。导出、批量编译和字体生成脚本会自动更新这些资源；SDK 设备定义更新或新增机型后也可手动运行 `python scripts/generate_device_settings.py`。缺失设备定义会报错，避免静默生成错误列表。新增字段需要同时实现读取/标签并更新生成脚本中的 `FIELDS`。
+
+新增字段均读取 SensorHistory 最新一条样本，不主动启动测量：压力 0–100，血氧百分比，海拔米，气压从 Pa 换算为 hPa，传感器温度摄氏度（不是天气温度）。无样本或无效压力/血氧/气压显示 `--`；零压力、负海拔和负温度保留。字段提供 API 并不保证设备有硬件或已开启测量。中文和图标由 `scripts/generate_label_font.py` 生成。
+
+运行 `python scripts/test_device_settings.py` 核对全部机型的接口与设置选项、默认值、中文及图标字形覆盖。

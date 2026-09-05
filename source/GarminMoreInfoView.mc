@@ -17,6 +17,11 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     private const DATA_WATCH_BATTERY = 3;
     private const DATA_CALORIES = 4;
     private const DATA_DISTANCE = 5;
+    private const DATA_STRESS = 6;
+    private const DATA_OXYGEN = 7;
+    private const DATA_ELEVATION = 8;
+    private const DATA_PRESSURE = 9;
+    private const DATA_TEMPERATURE = 10;
 
     private const STYLE_ENGLISH = 1;
     private const STYLE_CHINESE = 2;
@@ -111,6 +116,24 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         }
     }
 
+    // Invalid/stale selections fall back to a supported default; missing samples
+    // leave only the track visible instead of displaying another metric's value.
+    private function getOrbitValue(key, fallback) {
+        if (!isMetricSupported(fallback)) { fallback = DATA_WATCH_BATTERY; }
+        var selected = getSetting(key, fallback);
+        if ((selected != DATA_WATCH_BATTERY && selected != DATA_BODY_BATTERY &&
+             selected != DATA_STRESS && selected != DATA_OXYGEN) ||
+            !isMetricSupported(selected)) {
+            selected = fallback;
+        }
+        try {
+            if (selected == DATA_WATCH_BATTERY) { return System.getSystemStats().battery; }
+            if (selected == DATA_BODY_BATTERY) { return getBodyBattery(); }
+            return latestSensorValue(selected);
+        } catch (ex) {}
+        return null;
+    }
+
     private function drawOrbit(dc as Dc, cx, cy, edge, scale) as Void {
         var radius = edge / 2 - px(8, scale);
         var penWidth = px(5, scale);
@@ -120,14 +143,14 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
         dc.setPenWidth(penWidth);
 
-        // 1. 左侧轨（手表电量）：从 6点钟(264°) 顺时针延伸至 12点钟(96°)，总跨度 168°
+        // 1. 左侧自定义数据轨：从 6点钟(264°) 顺时针延伸至 12点钟(96°)，总跨度 168°
         // 暗灰底轨
         dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
         dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, 96);
 
-        // 手表电量高亮进度
-        var watchBattery = System.getSystemStats().battery;
-        if (watchBattery > 0) {
+        // 左侧所选数据的 0–100 进度
+        var watchBattery = getOrbitValue("leftArcData", DATA_WATCH_BATTERY);
+        if (watchBattery != null && watchBattery > 0) {
             if (watchBattery > 100) { watchBattery = 100; }
             var watchSweep = (watchBattery * 168 / 100).toNumber();
             if (watchSweep < 1) { watchSweep = 1; }
@@ -136,13 +159,13 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, 264, watchEnd);
         }
 
-        // 2. 右侧轨（身体电量）：从 6点钟(276°) 逆时针延伸至 12点钟(84°)，总跨度 168°
+        // 2. 右侧自定义数据轨：从 6点钟(276°) 逆时针延伸至 12点钟(84°)，总跨度 168°
         // 暗灰底轨
         dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
         dc.drawArc(cx, cy, radius, Graphics.ARC_COUNTER_CLOCKWISE, 276, 84);
 
-        // 身体电量高亮进度
-        var bodyBattery = getBodyBattery();
+        // 右侧所选数据的 0–100 进度
+        var bodyBattery = getOrbitValue("rightArcData", DATA_BODY_BATTERY);
         if (bodyBattery != null && bodyBattery > 0) {
             if (bodyBattery > 100) { bodyBattery = 100; }
             var bodySweep = (bodyBattery * 168 / 100).toNumber();
@@ -236,19 +259,19 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         var slotWidth = (edge * 0.35).toNumber();
         var style = getSetting("labelLanguage", STYLE_ENGLISH);
         var slot1 = getSetting("dataSlot1", DATA_STEPS);
-        if (slot1 == DATA_BODY_BATTERY || slot1 == DATA_WATCH_BATTERY) {
+        if (!isMetricSupported(slot1)) {
             slot1 = DATA_STEPS;
         }
         var slot2 = getSetting("dataSlot2", DATA_HEART_RATE);
-        if (slot2 == DATA_BODY_BATTERY || slot2 == DATA_WATCH_BATTERY) {
+        if (!isMetricSupported(slot2)) {
             slot2 = DATA_HEART_RATE;
         }
         var slot3 = getSetting("dataSlot3", DATA_CALORIES);
-        if (slot3 == DATA_BODY_BATTERY || slot3 == DATA_WATCH_BATTERY) {
+        if (!isMetricSupported(slot3)) {
             slot3 = DATA_CALORIES;
         }
         var slot4 = getSetting("dataSlot4", DATA_DISTANCE);
-        if (slot4 == DATA_BODY_BATTERY || slot4 == DATA_WATCH_BATTERY) {
+        if (!isMetricSupported(slot4)) {
             slot4 = DATA_DISTANCE;
         }
 
@@ -329,7 +352,35 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         return Graphics.FONT_SMALL;
     }
 
+    // Check capability, not sample availability: an unworn watch may return null.
+    private function isMetricSupported(dataType) as Boolean {
+        if (dataType == DATA_BODY_BATTERY) {
+            return (Toybox has :SensorHistory) && (Toybox.SensorHistory has :getBodyBatteryHistory);
+        }
+        if (dataType == DATA_STRESS) {
+            return (Toybox has :SensorHistory) && (Toybox.SensorHistory has :getStressHistory);
+        }
+        if (dataType == DATA_OXYGEN) {
+            return (Toybox has :SensorHistory) && (Toybox.SensorHistory has :getOxygenSaturationHistory);
+        }
+        if (dataType == DATA_ELEVATION) {
+            return (Toybox has :SensorHistory) && (Toybox.SensorHistory has :getElevationHistory);
+        }
+        if (dataType == DATA_PRESSURE) {
+            return (Toybox has :SensorHistory) && (Toybox.SensorHistory has :getPressureHistory);
+        }
+        if (dataType == DATA_TEMPERATURE) {
+            return (Toybox has :SensorHistory) && (Toybox.SensorHistory has :getTemperatureHistory);
+        }
+        return dataType == DATA_STEPS || dataType == DATA_HEART_RATE ||
+               dataType == DATA_WATCH_BATTERY || dataType == DATA_CALORIES ||
+               dataType == DATA_DISTANCE;
+    }
+
     private function readMetric(dataType, style) {
+        if (dataType >= DATA_STRESS && dataType <= DATA_TEMPERATURE) {
+            return readSensorMetric(dataType, style);
+        }
         var activity = null;
         try { activity = ActivityMonitor.getInfo(); } catch (ex) {}
 
@@ -337,7 +388,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             var hr = 0;
             try {
                 var active = Activity.getActivityInfo();
-                if (active != null && active.currentHeartRate != null) { hr = active.currentHeartRate; }
+                if (active != null && (active has :currentHeartRate) && active.currentHeartRate != null) { hr = active.currentHeartRate; }
             } catch (ex) {}
             var label = "BPM";
             if (style == STYLE_CHINESE) { label = "心率"; }
@@ -362,7 +413,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
         if (dataType == DATA_CALORIES) {
             var calories = 0;
-            if (activity != null && activity.calories != null) { calories = activity.calories; }
+            if (activity != null && (activity has :calories) && activity.calories != null) { calories = activity.calories; }
             var label = "KCAL";
             if (style == STYLE_CHINESE) { label = "卡路里"; }
             else if (style == STYLE_ICONS) { label = "E"; }
@@ -371,7 +422,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
         if (dataType == DATA_DISTANCE) {
             var distance = 0.0;
-            if (activity != null && activity.distance != null) {
+            if (activity != null && (activity has :distance) && activity.distance != null) {
                 distance = activity.distance.toDouble() / 100000.0;
             }
             var label = "KM";
@@ -381,11 +432,63 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         }
 
         var steps = 0;
-        if (activity != null && activity.steps != null) { steps = activity.steps; }
+        if (activity != null && (activity has :steps) && activity.steps != null) { steps = activity.steps; }
         var label = "STEPS";
         if (style == STYLE_CHINESE) { label = "步数"; }
         else if (style == STYLE_ICONS) { label = "A"; }
         return [formatWithCommas(steps), label];
+    }
+
+    private function readSensorMetric(dataType, style) {
+        var label = "STRESS";
+        var chinese = "压力";
+        var icon = "G";
+        if (dataType == DATA_OXYGEN) { label = "SPO2"; chinese = "血氧"; icon = "H"; }
+        else if (dataType == DATA_ELEVATION) { label = "ALT M"; chinese = "海拔"; icon = "I"; }
+        else if (dataType == DATA_PRESSURE) { label = "HPA"; chinese = "气压"; icon = "J"; }
+        else if (dataType == DATA_TEMPERATURE) { label = "TEMP C"; chinese = "温度"; icon = "K"; }
+        if (style == STYLE_CHINESE) { label = chinese; }
+        else if (style == STYLE_ICONS) { label = icon; }
+        var value = latestSensorValue(dataType);
+        if (value == null) { return ["--", label]; }
+        if (dataType == DATA_OXYGEN) { return [value.format("%.0f") + "%", label]; }
+        if (dataType == DATA_PRESSURE) { return [(value / 100.0).format("%.0f"), label]; }
+        if (dataType == DATA_TEMPERATURE) { return [value.format("%.1f"), label]; }
+        return [value.format("%.0f"), label];
+    }
+
+    // Read only the latest sample, never scan history on every screen refresh.
+    private function latestSensorValue(dataType) {
+        try {
+            if (!isMetricSupported(dataType)) { return null; }
+            var iterator = null;
+            var options = {:period => 1};
+            if (dataType == DATA_STRESS && (Toybox.SensorHistory has :getStressHistory)) {
+                iterator = Toybox.SensorHistory.getStressHistory(options);
+            }
+            if (dataType == DATA_OXYGEN && (Toybox.SensorHistory has :getOxygenSaturationHistory)) {
+                iterator = Toybox.SensorHistory.getOxygenSaturationHistory(options);
+            }
+            if (dataType == DATA_ELEVATION && (Toybox.SensorHistory has :getElevationHistory)) {
+                iterator = Toybox.SensorHistory.getElevationHistory(options);
+            }
+            if (dataType == DATA_PRESSURE && (Toybox.SensorHistory has :getPressureHistory)) {
+                iterator = Toybox.SensorHistory.getPressureHistory(options);
+            }
+            if (dataType == DATA_TEMPERATURE && (Toybox.SensorHistory has :getTemperatureHistory)) {
+                iterator = Toybox.SensorHistory.getTemperatureHistory(options);
+            }
+            if (iterator == null) { return null; }
+            var sample = iterator.next();
+            if (sample == null || sample.data == null) { return null; }
+            var value = sample.data.toFloat();
+            // Keep zero stress and negative elevation/temperature valid.
+            if (dataType == DATA_STRESS && (value < 0 || value > 100)) { return null; }
+            if (dataType == DATA_OXYGEN && (value <= 0 || value > 100)) { return null; }
+            if (dataType == DATA_PRESSURE && value <= 0) { return null; }
+            return value;
+        } catch (ex) {}
+        return null;
     }
 
     // Read on refresh so settings changes apply without recreating the view.

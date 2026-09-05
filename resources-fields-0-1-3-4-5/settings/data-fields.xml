@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<settings>
+    <setting propertyKey="@Properties.dataSlot1" title="@Strings.DataSlot1Title">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.DataSteps</listEntry>
+            <listEntry value="1">@Strings.DataHeartRate</listEntry>
+            <listEntry value="3">@Strings.DataWatchBattery</listEntry>
+            <listEntry value="4">@Strings.DataCalories</listEntry>
+            <listEntry value="5">@Strings.DataDistance</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.dataSlot2" title="@Strings.DataSlot2Title">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.DataSteps</listEntry>
+            <listEntry value="1">@Strings.DataHeartRate</listEntry>
+            <listEntry value="3">@Strings.DataWatchBattery</listEntry>
+            <listEntry value="4">@Strings.DataCalories</listEntry>
+            <listEntry value="5">@Strings.DataDistance</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.dataSlot3" title="@Strings.DataSlot3Title">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.DataSteps</listEntry>
+            <listEntry value="1">@Strings.DataHeartRate</listEntry>
+            <listEntry value="3">@Strings.DataWatchBattery</listEntry>
+            <listEntry value="4">@Strings.DataCalories</listEntry>
+            <listEntry value="5">@Strings.DataDistance</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.dataSlot4" title="@Strings.DataSlot4Title">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.DataSteps</listEntry>
+            <listEntry value="1">@Strings.DataHeartRate</listEntry>
+            <listEntry value="3">@Strings.DataWatchBattery</listEntry>
+            <listEntry value="4">@Strings.DataCalories</listEntry>
+            <listEntry value="5">@Strings.DataDistance</listEntry>
+        </settingConfig>
+    </setting>
+</settings>

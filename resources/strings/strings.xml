@@ -48,4 +48,11 @@
     <string id="DataWatchBattery">手表电量</string>
     <string id="DataCalories">卡路里</string>
     <string id="DataDistance">距离</string>
+    <string id="DataStress">压力（0–100）</string>
+    <string id="DataOxygen">血氧（%）</string>
+    <string id="DataElevation">海拔（米）</string>
+    <string id="DataPressure">气压（hPa）</string>
+    <string id="DataTemperature">传感器温度（摄氏度）</string>
+    <string id="LeftArcDataTitle">左侧半圆数据</string>
+    <string id="RightArcDataTitle">右侧半圆数据</string>
 </strings>

@@ -41,6 +41,8 @@ param(
 
 # --- 路径配置 ---
 $projectRoot   = Resolve-Path (Join-Path $PSScriptRoot "..")
+& python (Join-Path $PSScriptRoot "generate_device_settings.py")
+if ($LASTEXITCODE -ne 0) { throw "Device settings generation failed" }
 $manifestPath  = Join-Path $projectRoot "manifest.xml"
 $junglePath    = Join-Path $projectRoot "monkey.jungle"
 $keyPath       = Join-Path $projectRoot "developer_key.der"

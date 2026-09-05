@@ -3,6 +3,8 @@ param (
 )
 
 $projectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+& python (Join-Path $PSScriptRoot "generate_device_settings.py")
+if ($LASTEXITCODE -ne 0) { throw "Device settings generation failed" }
 $junglePath  = Join-Path $projectRoot "monkey.jungle"
 $keyPath     = Join-Path $projectRoot "developer_key.der"
 $outputDir   = Join-Path $projectRoot "bin"

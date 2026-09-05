@@ -68,6 +68,26 @@ def draw_pin_icon(size=20):
     d.ellipse([8, 6, 12, 10], fill=(0, 0, 0, 0))
     return img
 
+def draw_sensor_icon(kind, size=20):
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    white = (255, 255, 255, 255)
+    if kind == 'stress':
+        d.line([(1, 11), (5, 11), (8, 3), (12, 17), (15, 9), (19, 9)], fill=white, width=2)
+    elif kind == 'oxygen':
+        d.polygon([(10, 1), (3, 11), (3, 15), (7, 19), (13, 19), (17, 15), (17, 11)], outline=white, width=2)
+    elif kind == 'elevation':
+        d.line([(1, 18), (8, 3), (12, 11), (15, 7), (19, 18), (1, 18)], fill=white, width=2)
+    elif kind == 'pressure':
+        d.arc((1, 2, 18, 19), 140, 400, fill=white, width=2)
+        d.line([(10, 12), (15, 6)], fill=white, width=2)
+        d.ellipse((8, 10, 12, 14), fill=white)
+    else:
+        d.rounded_rectangle((7, 1, 12, 14), radius=2, outline=white, width=2)
+        d.ellipse((5, 11, 14, 19), fill=white)
+    return img
+
+
 def generate_font(output_dir):
     os.makedirs(output_dir, exist_ok=True)
     fnt_path = os.path.join(output_dir, "custom_label.fnt")
@@ -88,7 +108,7 @@ def generate_font(output_dir):
             except Exception:
                 pass
 
-    chars_to_add = "心率身电量卡路里距离步数周一二三四五六日星期 0123456789"
+    chars_to_add = "压力血氧海拔气温度心率身电量卡路里距离步数周一二三四五六日星期 0123456789"
     
     icons = {
         'A': draw_steps_icon(20),
@@ -97,6 +117,12 @@ def generate_font(output_dir):
         'D': draw_battery_icon(20),
         'E': draw_flame_icon(20),
         'F': draw_pin_icon(20),
+        'G': draw_sensor_icon('stress'),
+        'H': draw_sensor_icon('oxygen'),
+        'I': draw_sensor_icon('elevation'),
+        'J': draw_sensor_icon('pressure'),
+        'K': draw_sensor_icon('temperature'),
+
     }
 
     # 计算各字符图像
