@@ -9,7 +9,7 @@
     <string id="FontGorditas">Gorditas</string>
     <string id="FontLumberjack">Lumberjack</string>
     <string id="AppName">Garmin More Info</string>
-    <string id="DeviceIdTitle">设备ID（发给客服激活）</string>
+    <string id="DeviceIdTitle">设备ID</string>
     <string id="LicenseTitle">激活码</string>
     <string id="LicensePrompt">请输入激活码</string>
     <string id="ActivationNotice">Enter activation code</string>

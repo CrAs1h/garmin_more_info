@@ -8,6 +8,7 @@ import Toybox.WatchUi;
 
 (:background)
 class ActivationServiceDelegate extends System.ServiceDelegate {
+    private const PRODUCT_KEY = "WFKEY-4AE8D7F7B4D43564";
     private var mRequestCode as String = "";
     function initialize() {
         ServiceDelegate.initialize();
@@ -15,8 +16,10 @@ class ActivationServiceDelegate extends System.ServiceDelegate {
 
     function onTemporalEvent() as Void {
         var code = Application.Properties.getValue("licenseKey");
+        System.println("[BG] onTemporalEvent triggered, licenseKey=" + (code != null ? code : "null"));
         if (code == null || !(code instanceof String) || (code as String).equals("")) {
-            Background.exit({ "valid" => false });
+            System.println("[BG] licenseKey is empty, exiting background.");
+            Background.exit({ "valid" => false, "activation_code" => "" });
             return;
         }
 
@@ -27,7 +30,8 @@ class ActivationServiceDelegate extends System.ServiceDelegate {
         while (end > start && isWhitespace(rawCode.substring(end - 1, end))) { end--; }
         mRequestCode = rawCode.substring(start, end);
         if (mRequestCode.equals("")) {
-            Background.exit(null);
+            System.println("[BG] trimmed code is empty, exiting background.");
+            Background.exit({ "valid" => false, "activation_code" => "" });
             return;
         }
         var deviceId = "";
@@ -35,10 +39,15 @@ class ActivationServiceDelegate extends System.ServiceDelegate {
         if (settings has :uniqueIdentifier && settings.uniqueIdentifier != null) {
             deviceId = settings.uniqueIdentifier as String;
         }
+        System.println("[BG] Sending request: code=" + mRequestCode + ", deviceId=" + deviceId);
 
         Communications.makeWebRequest(
             "https://warehouse-hz.top/api/v1/garmin_code/verify",
-            { "activation_code" => mRequestCode, "device_id" => deviceId },
+            {
+                "activation_code" => mRequestCode,
+                "device_id" => deviceId,
+                "product_key" => PRODUCT_KEY
+            },
             {
                 :method => Communications.HTTP_REQUEST_METHOD_POST,
                 :headers => { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_JSON },
@@ -53,8 +62,10 @@ class ActivationServiceDelegate extends System.ServiceDelegate {
     }
 
     function onResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
+        System.println("[BG] onResponse: code=" + responseCode + ", data=" + data);
         if (responseCode != 200 || !(data instanceof Dictionary)) {
-            Background.exit(null);
+            System.println("[BG] Verification request failed or status != 200");
+            Background.exit({ "valid" => false, "activation_code" => mRequestCode });
             return;
         }
 
@@ -71,6 +82,7 @@ class ActivationServiceDelegate extends System.ServiceDelegate {
                         (result.hasKey("activated") && result.get("activated") == true);
             }
         }
+        System.println("[BG] Verification parsed valid=" + valid);
         Background.exit({ "valid" => valid, "activation_code" => mRequestCode });
     }
 }
@@ -96,12 +108,14 @@ class GarminMoreInfoApp extends Application.AppBase {
     }
 
     function onSettingsChanged() as Void {
+        System.println("[App] onSettingsChanged triggered");
         getLicenseManager().revalidate();
         requestActivationCheckOnce();
         WatchUi.requestUpdate();
     }
 
     function onBackgroundData(data) as Void {
+        System.println("[App] onBackgroundData received: " + data);
         if (data instanceof Dictionary && data.hasKey("valid") && data.hasKey("activation_code")) {
             getLicenseManager().setActivationStatus(data.get("valid") == true, data.get("activation_code") as String);
         }
@@ -118,8 +132,11 @@ class GarminMoreInfoApp extends Application.AppBase {
     // The temporal event is one-shot: one settings save, one verification.
     private function requestActivationCheckOnce() as Void {
         try {
-            Background.registerForTemporalEvent(new Time.Duration(5 * 60));
-        } catch (ex) {}
+            System.println("[App] Registering temporal event for Time.now()");
+            Background.registerForTemporalEvent(Time.now());
+        } catch (ex) {
+            System.println("[App] Register temporal event caught exception: " + ex.getErrorMessage());
+        }
     }
 }
 
