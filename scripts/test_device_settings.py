@@ -25,7 +25,7 @@ class DeviceSettingsTests(unittest.TestCase):
                 matches = re.findall(rf"^{device}\.resourcePath = (.+)$", jungle, re.M)
                 self.assertEqual(len(matches), 1)
                 profile = matches[0].strip().split(";")[-1]
-                all_settings = ET.parse(ROOT / profile / "settings/data-fields.xml").findall("setting")
+                all_settings = ET.parse(ROOT / profile / "settings/data-fields.xml").findall("./group/setting")
                 slots = [s for s in all_settings if s.get("propertyKey").startswith("@Properties.dataSlot")]
                 arcs = [s for s in all_settings if s not in slots]
                 self.assertEqual({s.get("propertyKey") for s in arcs}, {"@Properties.leftArcData", "@Properties.rightArcData"})

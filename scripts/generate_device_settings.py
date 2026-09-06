@@ -58,14 +58,8 @@ def generate(devices):
 
     for profile, fields in profiles.items():
         settings = ET.Element("settings")
-        for slot in range(1, 5):
-            setting = ET.SubElement(settings, "setting", {
-                "propertyKey": f"@Properties.dataSlot{slot}",
-                "title": f"@Strings.DataSlot{slot}Title"})
-            config = ET.SubElement(setting, "settingConfig", {"type": "list"})
-            for value, label, _, _ in FIELDS:
-                if value in fields:
-                    ET.SubElement(config, "listEntry", {"value": str(value)}).text = "@Strings." + label
+        group = ET.SubElement(settings, "group", {
+            "id": "data", "title": "@Strings.DataGroupTitle"})
         # Properties are profile-specific so every default exists in its list.
         properties = ET.Element("properties")
         arc_fields = [value for value in (3, 2, 6, 7) if value in fields]
@@ -75,11 +69,19 @@ def generate(devices):
             ("rightArcData", "RightArcDataTitle", 2 if 2 in fields else 3),
         ):
             ET.SubElement(properties, "property", {"id": key, "type": "number"}).text = str(default)
-            setting = ET.SubElement(settings, "setting", {
+            setting = ET.SubElement(group, "setting", {
                 "propertyKey": "@Properties." + key, "title": "@Strings." + title})
             config = ET.SubElement(setting, "settingConfig", {"type": "list"})
             for value in arc_fields:
                 ET.SubElement(config, "listEntry", {"value": str(value)}).text = "@Strings." + labels[value]
+        for slot in range(1, 5):
+            setting = ET.SubElement(group, "setting", {
+                "propertyKey": f"@Properties.dataSlot{slot}",
+                "title": f"@Strings.DataSlot{slot}Title"})
+            config = ET.SubElement(setting, "settingConfig", {"type": "list"})
+            for value, label, _, _ in FIELDS:
+                if value in fields:
+                    ET.SubElement(config, "listEntry", {"value": str(value)}).text = "@Strings." + label
         ET.indent(properties, space="    ")
         ET.indent(settings, space="    ")
         folder = ROOT / profile / "settings"

@@ -35,13 +35,14 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
     private const COLOR_BACKGROUND = 0x000000;
     private const COLOR_PRIMARY = 0xF6F2EA;
-    private var mAccentColor = 0xC6FF00;
-    private var mWatchBatteryColor = 0xC6FF00;
-    private var mBodyBatteryColor = 0xC6FF00;
+    private var mAccentColor = 0xF6F2EA;
+    private var mWatchBatteryColor = 0x99CCCC;
+    private var mBodyBatteryColor = 0xFFCC99;
     private const COLOR_MUTED = 0x8A8A8A;
     private const COLOR_TRACK = 0x2A2A2A;
 
     private var mLowPower = false;
+    private var mLicenseManager as LicenseManager?;
     private var mCustomLabelFont as WatchUi.FontResource? = null;
     private var mCustomDateFont as WatchUi.FontResource? = null;
     private var mCollegeTime;
@@ -52,6 +53,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
 
     function initialize(licenseManager as LicenseManager?) {
         WatchFace.initialize();
+        mLicenseManager = licenseManager;
         updateFonts();
         try {
             mCustomLabelFont = WatchUi.loadResource(Rez.Fonts.CustomLabelFont) as WatchUi.FontResource;
@@ -125,7 +127,22 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
         drawTime(dc, cx, h, scale);
         if (!mLowPower) {
             drawDataSlots(dc, cx, h, edge, scale);
+            drawActivationNotice(dc, cx, h, scale);
         }
+    }
+
+    private function drawActivationNotice(dc as Dc, cx, h, scale) as Void {
+        if (mLicenseManager != null && mLicenseManager.isActivated()) { return; }
+        var notice = WatchUi.loadResource(Rez.Strings.ActivationNotice) as String;
+        var font = Graphics.FONT_XTINY;
+        var width = dc.getTextWidthInPixels(notice, font);
+        var height = dc.getFontHeight(font);
+        var y = (h * 0.77).toNumber();
+        var padding = px(4, scale);
+        dc.setColor(COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(cx - width / 2 - padding, y - padding,
+            width + padding * 2, height + padding * 2, padding);
+        drawText(dc, cx, y, font, notice, COLOR_PRIMARY, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // Invalid/stale selections fall back to a supported default; missing samples
@@ -314,7 +331,7 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
             dateText = daysEn[now.day_of_week - 1] + " " + now.day.format("%02d");
         }
 
-        drawText(dc, cx, (h * 0.13).toNumber() - px(2, scale), font, dateText,
+        drawText(dc, cx, (h * 0.13).toNumber(), font, dateText,
                  mLowPower ? COLOR_MUTED : mWatchBatteryColor, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
@@ -574,10 +591,13 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
     // Read on refresh so settings changes apply without recreating the view.
     // Missing or unsupported values retain the original theme.
     private function updateTheme() as Void {
-        var theme = getSetting("colorTheme", 0);
+        var theme = getSetting("colorTheme", 5);
         // Neutral values and ticks balance the colored arcs, date and labels.
         mAccentColor = COLOR_PRIMARY;
         switch (theme) {
+            case 0:
+                mAccentColor = 0xC6FF00;
+                break;
             case 9:
                 mAccentColor = 0x99DDCC;
                 break;
@@ -649,8 +669,9 @@ class GarminMoreInfoView extends WatchUi.WatchFace {
                 mAccentColor = 0xF6F2EA;
                 break;
             default:
-                mAccentColor = 0xC6FF00;
-                break;
+                mWatchBatteryColor = 0x99CCCC;
+                mBodyBatteryColor = 0xFFCC99;
+                return;
         }
         // Reset both arcs when returning from a two-tone to a solid theme.
         mWatchBatteryColor = mAccentColor;

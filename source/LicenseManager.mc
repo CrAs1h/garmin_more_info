@@ -9,7 +9,6 @@ import Toybox.WatchUi;
 // 调用 https://warehouse-hz.top/api/v1/garmin_code/verify 校验激活码与设备ID
 class LicenseManager {
 
-    private const VERIFY_URL = "https://warehouse-hz.top/api/v1/garmin_code/verify";
     private const STORAGE_KEY_ACTIVATED = "is_activated";
     private const STORAGE_KEY_LAST_CODE = "last_activation_code";
 
@@ -24,8 +23,6 @@ class LicenseManager {
         // 尝试从 Storage 加载本地已保存的激活状态
         mIsActivated = _loadSavedActivationStatus();
 
-        // 启动时自动触发一次 API 校验
-        verifyOnline();
     }
 
     // 获取设备唯一标识
@@ -39,8 +36,7 @@ class LicenseManager {
     }
 
     // 手动设置/更新激活状态（由后台通信服务完成验证后回调更新）
-    function setActivationStatus(activated as Boolean) as Void {
-        mIsActivated = activated;
+    function setActivationStatus(activated as Boolean, verifiedCode as String) as Void {
         var userCode = "";
         try {
             var val = Properties.getValue("licenseKey");
@@ -48,6 +44,9 @@ class LicenseManager {
                 userCode = _trim(val as String);
             }
         } catch (ex) {}
+        // Ignore responses for a code replaced while the request was pending.
+        if (!verifiedCode.equals(userCode)) { return; }
+        mIsActivated = activated;
         _saveActivationStatus(activated, userCode);
     }
 
@@ -58,6 +57,7 @@ class LicenseManager {
 
     // 重新验证授权码（设置变更或显式校验时调用）
     function revalidate() as Void {
+        mIsActivated = _loadSavedActivationStatus();
         verifyOnline();
     }
 
